@@ -10,7 +10,7 @@ typedef struct block_header_t
         struct block_header_t *nxt;
 } block_header_t;
 
-void *kalloc(size_t siz);
+void *kmalloc(size_t siz);
 void kfree(void *base);
 
 #endif

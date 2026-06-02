@@ -6,7 +6,7 @@
 char *UlToString(unsigned long Number)
 {
         // each byte requires at most three digits
-        char *const String = kalloc(sizeof(Number) * 8);
+        char *const String = kmalloc(sizeof(Number) * 8);
         unsigned long i;
         for (i = 0; i < sizeof(Number) * 3; ++i)
         {

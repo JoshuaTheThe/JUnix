@@ -1,17 +1,11 @@
+
 #include <drivers/serial.h>
 #include <io.h>
 #include <arch.h>
-
-void serial_init(void)
-{
-        outb(SERIAL_IER, 0x00);  // Disable all interrupts
-        outb(SERIAL_LCR, 0x80);  // Set DLAB (Data Access Bit) to 1
-        outb(SERIAL_PORT, 0x03);  // Set LSB of baud rate divisor (e.g., 0x03 for 115200 baud)
-        outb(SERIAL_IER, 0x00);  // Disable interrupts again (no need to enable them yet)
-        outb(SERIAL_LCR, 0x03);  // LCR = 0x03 (8 bits, no parity, 1 stop bit)
-        outb(SERIAL_PORT + 2, 0xC7);  // FIFO Control Register: Enable FIFO, clear RX/TX
-        outb(SERIAL_MCR, 0x0B);  // Enable DTR and RTS for flow control
-}
+#include <stdint.h>
+#include <fs/fs.h>
+#include <mm/alloc.h>
+#include <string.h>
 
 static void serial_wait_for_transmit(void)
 {
@@ -40,4 +34,63 @@ char serial_getchar(void)
 {
         serial_wait_for_input();
         return inb(SERIAL_PORT);
+}
+
+static int serial_read(file_t *f, void *buf, size_t count)
+{
+        (void)f;
+        char *cbuf = buf;
+        for (size_t i = 0; i < count; i++)
+        {
+                cbuf[i] = serial_getchar();
+        }
+        return count;
+}
+
+static int serial_write(file_t *f, const void *buf, size_t count)
+{
+        (void)f;
+        const char *cbuf = buf;
+        for (size_t i = 0; i < count; i++)
+        {
+                serial_putchar(cbuf[i]);
+        }
+        return count;
+}
+
+static file_ops_t serial_ops =
+{
+        .read = serial_read,
+        .write = serial_write,
+        .open = NULL,
+        .close = NULL,
+        .lseek = NULL,
+};
+
+void serial_register_device(void)
+{
+        vnode_t *dev_dir;
+        vfs_lookup("/dev", &dev_dir);
+
+        vnode_t *serial = kmalloc(sizeof(vnode_t));
+        memset(serial, 0, sizeof(vnode_t));
+        serial->name = "ttyS0";
+        serial->parent = dev_dir;
+        serial->ops = &serial_ops;
+
+        // Add to /dev directory
+        serial->next = dev_dir->children;
+        dev_dir->children = serial;
+}
+
+void serial_init(void)
+{
+        outb(SERIAL_IER, 0x00);  // Disable all interrupts
+        outb(SERIAL_LCR, 0x80);  // Set DLAB (Data Access Bit) to 1
+        outb(SERIAL_PORT, 0x03);  // Set LSB of baud rate divisor (e.g., 0x03 for 115200 baud)
+        outb(SERIAL_IER, 0x00);  // Disable interrupts again (no need to enable them yet)
+        outb(SERIAL_LCR, 0x03);  // LCR = 0x03 (8 bits, no parity, 1 stop bit)
+        outb(SERIAL_PORT + 2, 0xC7);  // FIFO Control Register: Enable FIFO, clear RX/TX
+        outb(SERIAL_MCR, 0x0B);  // Enable DTR and RTS for flow control
+        serial_register_device();
 }

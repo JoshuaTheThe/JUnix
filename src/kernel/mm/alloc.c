@@ -2,7 +2,7 @@
 #include <mm/alloc.h>
 #include <panic.h>
 
-void *kalloc(size_t siz)
+void *kmalloc(size_t siz)
 {
         if (siz == 0)
                 return NULL;
