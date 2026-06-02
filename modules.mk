@@ -1,0 +1,25 @@
+
+MODULES_DIR := modules
+MODULES_BUILD_DIR := obj/modules
+MODULES_BIN_DIR := bin/modules
+
+MODULES := $(wildcard $(MODULES_DIR)/*/)
+# MODULE_NAMES := $(notdir $(patsubst %/,%,$(MODULES)))
+
+MODULE_OBJS := $(foreach m,$(MODULE_NAMES),$(MODULES_BUILD_DIR)/$(m)/main.o)
+MODULE_BINS := $(foreach m,$(MODULE_NAMES),$(MODULES_BIN_DIR)/$(m).ko)
+
+.PHONY: modules clean-modules
+
+modules: $(MODULE_BINS)
+
+$(MODULES_BIN_DIR)/%.ko: $(MODULES_BUILD_DIR)/%/main.o
+	@mkdir -p $(dir $@)
+	$(KLD) $(KLDFLAGS) -r -o $@ $< 
+
+$(MODULES_BUILD_DIR)/%/main.o: $(MODULES_DIR)/%/main.c
+	@mkdir -p $(dir $@)
+	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -fno-pic -fno-pie -I src/kernel -I $(MODULES_DIR) -I $(SRC)/$(ARCH) -c -o $@ $< $(ARCH_MODULE_FLAGS)
+
+clean-modules:
+	rm -rf $(MODULES_BUILD_DIR) $(MODULES_BIN_DIR)

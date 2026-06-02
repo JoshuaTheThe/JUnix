@@ -1,0 +1,84 @@
+
+#ifndef VNODE_H
+#define VNODE_H
+
+#define VFS_WRITE   (0x01)
+#define VFS_READ    (0x02)
+#define VFS_HIDDEN  (0x04)
+#define VFS_SYSTEM  (0x08)
+#define VFS_LINK    (0x10)
+#define VFS_MOUNTED (0x20) // treat the linked file as a device // directory
+#define VFS_OPENED  (0x40)
+#define VFS_ONDISK  (0x80) // children are on disk for the given file system, loaded via ConstructChildren
+#define VFS_DELETE  (0x100)// delete on close
+
+struct VNode;
+
+typedef int (*VNodeRWFunction)(
+        void *const Buf,
+        const unsigned long Size,
+        const unsigned long Elements,
+        struct VNode *const Node);
+
+typedef void (*VNodeFunction)(struct VNode *const Node);
+typedef void (*VNodeConstructFunction)(struct VNode *const Node, unsigned long MaxDepth);
+typedef struct VNode *(*VNodeFindFunction)(struct VNode *Base, const char *const RelativePath, unsigned long RelativePathLength);
+
+typedef unsigned int VNodeFlags;
+
+typedef struct
+{
+        unsigned char Year : 7;
+        unsigned char Day : 5;
+        unsigned char Month : 4;
+} VNodeTime;
+
+typedef struct
+{
+        const char   *Name;
+        unsigned long Length;
+} VNodeString;
+
+typedef struct VNode
+{
+        VNodeString            Name;
+        struct VNode          *Parent,
+                              *FirstChild,
+                              *Next,
+                              *Previous,
+                              *Link; // Link for say, Mount or SymLink
+        void                  *DriverData;
+        VNodeRWFunction        ReadFunction;
+        VNodeRWFunction        WriteFunction;
+        VNodeConstructFunction ConstructChildren; // for Drives // Directories
+        VNodeFunction          DestroyChildren;   // for Drives // Directories
+        VNodeFindFunction      RelativeFind;
+        VNodeTime              Created;
+        VNodeTime              LastModified;
+        VNodeTime              LastAccessed;
+        VNodeFlags             Flags;
+        long                   FileOffset;
+} VNode;
+
+enum
+{
+        SEEK_SET,
+        SEEK_CUR,
+        SEEK_END,
+};
+
+// root will be a node,
+// where Root->ConstructChildren
+// finds all drives and devices, which may find all files upon asking
+
+VNode *NewVNode(VNodeFlags Flags);
+void   DeleteVNode(VNode *Node);
+void   RegisterChildVNode(VNode *const Parent, VNode *const Child);
+void   RegisterSiblingVNode(VNode *const Base, VNode *const Child);
+VNode *RootVNode(void);
+void   VNodeDefault(VNode *Node);
+void   VNodeSeek(VNode *Node, long SeekOffset, int SeekType);
+void   VNListTree(VNode *Base, int Depth);
+void   UnregisterVNode(VNode *const Node);
+
+#endif

@@ -1,0 +1,5 @@
+bin
+obj
+.vscode
+src/symbols.c
+qemu.log
