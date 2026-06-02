@@ -1,16 +1,16 @@
 
 override MAKEFLAGS += -rR
 
-ARCH := amd64
+ARCH := ia32
 override BIN := bin
 override SRC := src
 override KERNEL := $(SRC)/kernel
-override OUTPUT := unarddegos
+override OUTPUT := junix
 
 override CFILES := $(shell find $(KERNEL)/ -type f -name '*.c' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
-override CFILES += $(shell find $(SRC)/$(ARCH) -type f -name '*.c' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
+override CFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.c' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 override ASFILES := $(shell find $(KERNEL)/ -type f -name '*.s' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
-override ASFILES += $(shell find $(SRC)/$(ARCH) -type f -name '*.s' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
+override ASFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.s' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 
 override KCC := clang
 override KAS := clang
@@ -27,7 +27,7 @@ override ARCH_LINKER_SCRIPT := $(SRC)/$(ARCH)/linker.ld
 override ARCH_OUTPUT_SUFFIX :=
 override ARCH_RUN_SCRIPT :=
 
-include $(SRC)/$(ARCH)/arch.mk
+include $(SRC)/arch/$(ARCH)/arch.mk
 
 override KCFLAGS += \
     -c \
@@ -60,21 +60,16 @@ override HEADER_DEPS += $(addprefix obj/,$(CFILES:.C=.C.d))
 .PHONY: all
 all: bin/$(OUTPUT)
 
-bin/$(OUTPUT): $(OBJ) modules
+bin/$(OUTPUT): $(OBJ)
 	mkdir -p "$$(dirname $@)"
-	@bash "scripts/kernelsym.sh" $(ARCH)
-	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $(SRC)/symbols.c -o obj/symbols.c.o -I $(KERNEL) -I $(SRC)/$(ARCH)
-	$(KLD) $(OBJ) obj/symbols.c.o $(KLDFLAGS) -o $@ -T $(ARCH_LINKER_SCRIPT) 
-	@bash "scripts/kernelsym.sh" $(ARCH)
-	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $(SRC)/symbols.c -o obj/symbols.c.o -I $(KERNEL) -I $(SRC)/$(ARCH)
-	$(KLD) $(OBJ) obj/symbols.c.o $(KLDFLAGS) -o $@ -T $(ARCH_LINKER_SCRIPT) 
+	$(KLD) $(OBJ) $(KLDFLAGS) -o $@ -T $(ARCH_LINKER_SCRIPT) 
 	@echo " [INFO] Built $(OUTPUT) for architecture $(ARCH)"
 
 -include $(HEADER_DEPS)
 
 obj/%.c.o: $(SRC)/%.c
 	mkdir -p "$$(dirname $@)"
-	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@ -I $(KERNEL) -I $(SRC)/$(ARCH)
+	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@ -I $(KERNEL) -I $(SRC)/arch/$(ARCH)
 
 obj/%.s.o: $(SRC)/%.s
 	mkdir -p "$$(dirname $@)"
@@ -84,12 +79,10 @@ obj/%.s.o: $(SRC)/%.s
 	mkdir -p "$$(dirname $@)"
 	$(KAS) $(ASFLAGS) -c $< -o $@
 
-include $(SRC)/$(ARCH)/post.mk
-
-include modules.mk
+include $(SRC)/arch/$(ARCH)/post.mk
 
 .PHONY: clean
-clean: clean-modules
+clean:
 	@rm -rf bin obj
 
 .PHONY: run

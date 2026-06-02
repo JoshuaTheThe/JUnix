@@ -1,7 +1,7 @@
 
 #include <string.h>
 #include <panic.h>
-#include <vmem/alloc.h>
+#include <mm/alloc.h>
 
 char *UlToString(unsigned long Number)
 {
@@ -27,7 +27,7 @@ char *UlToString(unsigned long Number)
 
 void memset(void *p, int v, long l)
 {
-        PanicIfNull(p);
+        not_optional(p);
         unsigned char *base = (unsigned char *)p;
         for (int i = 0; i < l; ++i)
         {
@@ -37,8 +37,8 @@ void memset(void *p, int v, long l)
 
 int strncmp(const char *const Lhs, const char *const Rhs, unsigned long Len)
 {
-        PanicIfNull(Lhs);
-        PanicIfNull(Rhs);
+        not_optional(Lhs);
+        not_optional(Rhs);
         for (unsigned long i = 0; i < Len; i++)
         {
                 if (Lhs[i] != Rhs[i] || Lhs[i] == '\0')
@@ -51,7 +51,7 @@ int strncmp(const char *const Lhs, const char *const Rhs, unsigned long Len)
 
 int strnlen(const char *const A, unsigned long Len)
 {
-        PanicIfNull(A);
+        not_optional(A);
         for (unsigned long i = 0; i < Len; ++i)
         {
                 if (A[i])
@@ -64,8 +64,8 @@ int strnlen(const char *const A, unsigned long Len)
 
 void memcpy(void *Destination, const void *const Source, const unsigned long Len)
 {
-        PanicIfNull(Destination);
-        PanicIfNull(Source);
+        not_optional(Destination);
+        not_optional(Source);
         for (unsigned long i = 0; i < Len; ++i)
         {
                 ((char *)Destination)[i] = ((char *)Source)[i];
