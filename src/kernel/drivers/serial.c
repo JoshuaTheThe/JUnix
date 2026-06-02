@@ -71,16 +71,11 @@ void serial_register_device(void)
 {
         vnode_t *dev_dir;
         vfs_lookup("/dev", &dev_dir);
-
         vnode_t *serial = kmalloc(sizeof(vnode_t));
         memset(serial, 0, sizeof(vnode_t));
-        serial->name = "ttyS0";
-        serial->parent = dev_dir;
+        serial->name = "serial";
         serial->ops = &serial_ops;
-
-        // Add to /dev directory
-        serial->next = dev_dir->children;
-        dev_dir->children = serial;
+        vfs_append_child(dev_dir, serial);
 }
 
 void serial_init(void)

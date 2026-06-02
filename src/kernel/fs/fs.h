@@ -8,6 +8,7 @@
 #define SEEK_SET 0
 #define SEEK_CUR 1
 #define SEEK_END 2
+#define VFS_DIRECTORY 0x1
 
 struct vnode;
 struct file;
@@ -15,6 +16,8 @@ struct filesystem;
 
 typedef struct file_ops
 {
+        size_t (*length)(struct file *f);
+        struct vnode *(*mkdir)(struct vnode *p, char *name, uint32_t flags);
         int (*readdir)(struct file *f, void *buf, size_t count);
         int (*read)(struct file *f, void *buf, size_t count);
         int (*write)(struct file *f, const void *buf, size_t count);
@@ -59,6 +62,9 @@ int vfs_lookup(const char *path, vnode_t **out);
 int vfs_read(file_t *f, void *buf, size_t count);
 int vfs_write(file_t *f, const void *buf, size_t count);
 long vfs_lseek(file_t *f, long offset, int whence);
+void vfs_append_child(vnode_t *f, vnode_t *x);
+vnode_t *vfs_mkdir(vnode_t *p, char *name, uint32_t flags);
+int vfs_readdir(file_t *f, void *buf, size_t count);
 
 extern vnode_t *root_vnode;
 

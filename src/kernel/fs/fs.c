@@ -14,14 +14,33 @@ int vfs_init(void)
         root_vnode->name = "/";
         root_vnode->ops = &dir_ops;
         root_vnode->flags = 0;
+        
         // Create /dev directory
         vnode_t *dev = kmalloc(sizeof(vnode_t));
         memset(dev, 0, sizeof(vnode_t));
         dev->name = "dev";
         dev->parent = root_vnode;
         dev->ops = &dir_ops;
-        root_vnode->children = dev;
+        vfs_append_child(root_vnode, dev);
+
+        // Create /mnt directory
+        vnode_t *mnt = kmalloc(sizeof(vnode_t));
+        memset(mnt, 0, sizeof(vnode_t));
+        mnt->name = "mnt";
+        mnt->parent = root_vnode;
+        mnt->ops = &dir_ops;
+        vfs_append_child(root_vnode, mnt);
         return 0;
+}
+
+int vfs_readdir(file_t *f, void *buf, size_t count)
+{
+        not_optional(f);
+        not_optional(buf);
+        if (!f || !buf) return -1;
+        vnode_t *v = f->vnode;
+        if (!v->ops || !v->ops->readdir) return -1;
+        return v->ops->readdir(f, buf, count);
 }
 
 int vfs_lookup(const char *path, vnode_t **out)
@@ -70,6 +89,7 @@ int vfs_mount(const char *path, filesystem_t *fs, void *data)
         not_optional(fs);
         vnode_t *mountpoint;
         if (vfs_lookup(path, &mountpoint) != 0) return -1;
+        if (mountpoint->children) return -1;
         return fs->mount(mountpoint, data);
 }
 
@@ -153,20 +173,34 @@ long vfs_lseek(file_t *f, long offset, int whence)
         switch (whence)
         {
         case SEEK_SET:
-            new_offset = offset;
-            break;
+                new_offset = offset;
+                break;
         case SEEK_CUR:
-            new_offset = f->offset + offset;
-            break;
+                new_offset = f->offset + offset;
+                break;
         case SEEK_END:
-            // For regular files, you'd need file size
-            // For now, return error
-            return -1;
+                not_optional(v->ops->length);
+                new_offset = v->ops->length(f) + offset;
+                break;
         default:
-            return -1;
+                return -1;
         }
 
         if (new_offset < 0) return -1;
         f->offset = new_offset;
         return new_offset;
+}
+
+void vfs_append_child(vnode_t  *f, vnode_t *x)
+{
+        x->next = f->children;
+        x->parent = f;
+        f->children = x;
+}
+
+vnode_t *vfs_mkdir(vnode_t *p, char *name, uint32_t flags)
+{
+        if (p->ops && p->ops->mkdir)
+                return p->ops->mkdir(p, name, flags);
+        return NULL;
 }
