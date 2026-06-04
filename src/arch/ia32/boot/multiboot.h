@@ -15,7 +15,7 @@ struct multiboot_info
 {
         uint32_t total_size;
         uint32_t reserved;
-        struct multiboot_tag tags[0];
+        struct multiboot_tag tags[];
 };
 
 struct multiboot_tag_module
