@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <drivers/serial.h>
+#include <fs/fs.h>
 
 #define panic(Code) panic_impl(__FILE__, __LINE__, Code, #Code, PANIC_CLASS_SUPERVISOR)
 #define not_optional(e) do { if ((e) == NULL) panic(PANIC_NULL_POINTER_DEREFERENCE); } while (0)
@@ -24,6 +25,7 @@ typedef enum
         PANIC_INCORRECT_BOOTLOADER,
         PANIC_UNHANDLED_INTERRUPT,
         PANIC_OVERHEAT,
+        PANIC_UNSUPPORTED_FS_OP,
 } panic_code_t;
 
 typedef enum
@@ -33,5 +35,6 @@ typedef enum
 } panic_class_t;
 
 _Noreturn void panic_impl(const char *const File, long Line, panic_code_t Code, const char *const CodeAsStr, panic_class_t Class);
+void list(vnode_t *node, size_t depth);
 
 #endif

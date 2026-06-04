@@ -1,10 +1,10 @@
         .section .text
         .global timer_int
         .global default_int
-        .extern next_process
+        .extern trap_next
 timer_int:
         cli
-        jmp next_process
+        jmp trap_next
 default_int:
         cli
         jmp default_int

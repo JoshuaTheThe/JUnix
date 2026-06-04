@@ -1,8 +1,11 @@
         .section .text
-        .global next_process
+        .global trap_next
         .extern scratch_proc
+        .extern scheduler_next
+        .extern scheduler_save
+        .extern scheduler_load
         .extern ticks_since_boot
-next_process:
+trap_next:
         cli
         movl    %eax, (0*4+scratch_proc)
         movl    %ecx, (1*4+scratch_proc)
@@ -35,12 +38,14 @@ next_process:
 	movw    %ax, %ss
 	movw    %ax, %fs
 	movw    %ax, %gs
+
+        # --- SWITCH TO INTERRUPT STACK AND COMMIT ---
         movl    $(kstack_top-16), %esp
         xorl    %ebp,%ebp
 
-        # --- SWITCH TO INTERRUPT STACK AND COMMIT ---
-        # call    CommitProcessSave
-        # call    CommitNextProcess
+        call    scheduler_save
+        call    scheduler_next
+        call    scheduler_load
         incl    (ticks_since_boot)
 
         # --- RELOAD POINTER (calls may have trashed edi) ---
@@ -76,11 +81,6 @@ next_process:
         iret
 
         .section .bss
-        .global ticks_since_boot
-        .global scratch_proc
 kstack:
         .space  4096
 kstack_top:
-scratch_proc:
-        .space  32*4
-ticks_since_boot:  .space  4

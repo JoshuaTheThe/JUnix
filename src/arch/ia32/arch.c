@@ -59,6 +59,7 @@ int arch_temp_mc(void)
 
 void arch_init(void)
 {
+        cli();
         gdt_init();
         idt_init();
         pit_init(100);

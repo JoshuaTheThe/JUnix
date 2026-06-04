@@ -5,6 +5,17 @@
 #include <arch.h>
 #include <string.h>
 
+void list(vnode_t *node, size_t depth)
+{
+        if (!node)
+                return;
+        for (size_t i = 0; i < depth; ++i)
+                kprint(" ");
+        kprint("%s\r\n", node->name);
+        list(node->children, depth+1);
+        list(node->next, depth);
+}
+
 _Noreturn void panic_impl(const char *const File, long Line, panic_code_t Code, const char *const CodeAsStr, panic_class_t Class)
 {
         cli(); // disable interrupts and say, context switching timers for given architecture
@@ -16,7 +27,7 @@ _Noreturn void panic_impl(const char *const File, long Line, panic_code_t Code, 
         #endif
         if (File)
                 kprint("Source Location: %s:%d\r\n", File, Line);
-        kprint("Trace Dump:\r\n");
+        list(root_vnode, 0);
         while (true)
                 pause();
 }

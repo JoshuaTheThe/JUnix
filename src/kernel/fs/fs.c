@@ -202,5 +202,5 @@ vnode_t *vfs_mkdir(vnode_t *p, char *name, uint32_t flags)
 {
         if (p->ops && p->ops->mkdir)
                 return p->ops->mkdir(p, name, flags);
-        return NULL;
+        panic(PANIC_UNSUPPORTED_FS_OP);
 }
