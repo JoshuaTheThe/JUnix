@@ -1,5 +1,6 @@
 #include <drivers/idt.h>
 #include <arch.h>
+#include <sys.h>
 
 static idt_entry_t idt[256];
 static idtp_t idtp;
@@ -22,6 +23,7 @@ void idt_init(void)
         }
 
         idt_set(0x20, (void *)timer_int, idt);
+        idt_set(0x80, (void *)sys_wrapper, idt);
         idtp.limit = (sizeof(idt_entry_t) * IDT_ENTRIES) - 1;
         idtp.base = (uint32_t)idt;
         asm volatile ("lidt (%0)" : : "r"(&idtp));

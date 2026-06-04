@@ -18,5 +18,7 @@ typedef struct _task_t
 void scheduler_init(void);
 vnode_t *scheduler_add_process(task_state_registers_t initial_regs, char *name);
 
+extern task_state_registers_t scratch_proc;
+
 #endif
 

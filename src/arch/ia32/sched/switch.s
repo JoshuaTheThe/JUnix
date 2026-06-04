@@ -81,6 +81,9 @@ trap_next:
         iret
 
         .section .bss
+        .global kstack
+        .global kstack_top
 kstack:
-        .space  4096
+        .space  8192
 kstack_top:
+        .space  32

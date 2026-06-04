@@ -16,5 +16,8 @@ typedef enum
         SYS_CLOSE,
 } SYSCMD;
 
+void sys_handler(void);
+void sys_wrapper(void);
+
 #endif
 
