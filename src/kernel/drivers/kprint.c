@@ -66,7 +66,7 @@ void kprint(const char *fmt, ...)
                         {
                                 int num = va_arg(args, int);
                                 char buffer[20] = {0};
-                                int i = 0;
+                                size_t i = 0;
 
                                 if (num < 0)
                                 {
@@ -80,9 +80,8 @@ void kprint(const char *fmt, ...)
                                 }
                                 else
                                 {
-                                        while (num > 0)
+                                        while (num > 0 && i < sizeof(buffer) - 1)
                                         {
-                                                // UNSAFE
                                                 buffer[i++] = (num % 10) + '0';
                                                 num /= 10;
                                         }

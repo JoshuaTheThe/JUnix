@@ -27,11 +27,11 @@ char *UlToString(unsigned long Number)
 
 void memset(void *p, int v, long l)
 {
-        not_optional(p);
         unsigned char *base = (unsigned char *)p;
+        not_optional(base);
         for (int i = 0; i < l; ++i)
         {
-                base[i] = v;
+                base[i] = (uint8_t)v; // why is std impl as int when it writes bytes... idk
         }
 }
 
@@ -62,7 +62,7 @@ int strnlen(const char *const A, unsigned long Len)
         return Len;
 }
 
-void memcpy(void *Destination, const void *const Source, const unsigned long Len)
+void memcpy(void *Destination, void *const Source, const unsigned long Len)
 {
         not_optional(Destination);
         not_optional(Source);
