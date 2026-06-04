@@ -15,7 +15,7 @@ override ASFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.s' | sed '
 override KCC := clang
 override KAS := clang
 override KLD := ld
-override KCFLAGS := -pipe -Wall -Wextra -c -fno-strict-aliasing -O0 -Wpedantic
+override KCFLAGS := -pipe -Wall -Wextra -c -O3 -Wpedantic -Wshadow -Wcast-qual
 override KCFLAGS += 
 override ASFLAGS += 
 override KLDFLAGS :=
@@ -35,8 +35,6 @@ override KCFLAGS += \
     -ffreestanding \
     -fno-builtin \
     -Werror \
-    -fno-stack-protector \
-    -fno-stack-check \
     $(ARCH_CFLAGS)
 
 override ASFLAGS += \
