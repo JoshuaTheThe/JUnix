@@ -5,6 +5,6 @@
 void sys_handler(void)
 {
         task_state_registers_t *regs = &scratch_proc;
-        regs->eax = -1;
+        regs->eax = (uint32_t)-1;
 }
 

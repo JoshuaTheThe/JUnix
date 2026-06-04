@@ -5,33 +5,30 @@
 #include <stddef.h>
 #include <panic.h>
 
-static void itoh(uint32_t value, char *buffer)
+static void itoh(uint32_t value, char buffer[static 9], size_t bufsize)
 {
-        // UNSAFE
-        static const char hex_digits[] = "0123456789abcdef";
-        not_optional(buffer);
-
+        static const char hex_digits[16] = "0123456789abcdef";
+        if (bufsize < 9)
+        {
+                if (bufsize > 0) buffer[0] = '\0';
+                return;
+        }
+    
         for (int i = 7; i >= 0; i--)
         {
                 buffer[i] = hex_digits[value & 0xF];
                 value >>= 4;
         }
-        // UNSAFE
+        
         buffer[8] = '\0';
 }
 
 static void puthex(uint32_t value)
 {
-        char hex_buffer[9];
-        int start = 0;
-        itoh(value, hex_buffer);
+        char hex_buffer[9] = {0};
+        itoh(value, hex_buffer, sizeof(hex_buffer));
         // UNSAFE
-        while (start < 7 && hex_buffer[start] == '0')
-        {
-                start++;
-        }
-
-        for (int i = start; i < 8; i++)
+        for (size_t i = 0; i < sizeof(hex_buffer) - 1; i++)
         {
                 // UNSAFE
                 serial_putchar(hex_buffer[i]);

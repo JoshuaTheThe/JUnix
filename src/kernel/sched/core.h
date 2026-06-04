@@ -6,7 +6,7 @@
 #include <sched/trap.h>
 #include <fs/fs.h>
 
-typedef struct _task_t
+typedef struct task_t
 {
         uint64_t               pid;
         task_state_registers_t regs;
