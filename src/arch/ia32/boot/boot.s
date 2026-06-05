@@ -42,10 +42,12 @@ multiboot_header_end:
         .section .text
         .global _start
         .type _start, @function
+        .extern fb_init
 _start: mov $stack_top, %esp
         xor %ebp, %ebp
         push %ebx
         push %eax
+        call init
         call kmain
 1:      cli
         hlt

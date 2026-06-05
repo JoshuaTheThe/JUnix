@@ -39,10 +39,10 @@ sys_wrapper:
 
         movw    $0x10, %ax
         movw    %ax, %ds
-	movw    %ax, %es
-	movw    %ax, %ss
-	movw    %ax, %fs
-	movw    %ax, %gs
+        movw    %ax, %es
+        movw    %ax, %ss
+        movw    %ax, %fs
+        movw    %ax, %gs
 
         # --- SWITCH TO INTERRUPT STACK AND COMMIT ---
         movl    $(kstack_top-16), %esp

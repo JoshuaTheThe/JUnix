@@ -9,10 +9,12 @@
 #include <arch.h>
 #include <string.h>
 #include <panic.h>
+#include <drivers/fb/fb.h>
+#include <fb/render.h>
 
 void create_b_main(void)
 {
-        kprint("Hello, World!\r\n");
+        kprint(" [b   ] Hello, World!\r\n");
         while(1)
                 ;
 }
@@ -35,41 +37,25 @@ void create_b(void)
 
 void kmain(void)
 {
-        arch_init();
-        cli();
-        vfs_init();
-        serial_init();
-        scheduler_init();
-        filesystem_t ramfs = ramfs_create_fs();
-        if (vfs_mount("/mnt", &ramfs, NULL) != 0)
-        {
-                kprint("could not create ramfs");
-                panic(PANIC_TODO);
-        }
-
-        vnode_t *mnt;
-        if (vfs_lookup("/mnt", &mnt) != 0)
-        {
-                kprint("could not create in ramfs");
-                panic(PANIC_TODO);
-        }
-
         create_b();
         sti();
-        vfs_mkdir(mnt, "test", 0);
-        vnode_t *root = root_vnode;
-        list(root, 0);
-
         file_t *f;
-        if (vfs_open("/dev/serial", &f) != 0)
+        if (vfs_open("/dev/fb-info", &f) != 0)
         {
-                kprint("could not find");
+                kprint(" [krnl] could not find /dev/fb-info");
                 panic(PANIC_TODO);
         }
 
-        vfs_write(f, "Hello, VFS World!\r\n", 19);
+        fb_t info = {0};
+        vfs_read(f, &info, sizeof(info));
+
+        fb_clear(&info, 0xFFFFFFFF);
+        fb_puts(" [krnl] Hello, World!\n",
+                &info,
+                &font_8x8,
+                0, 0,
+                0x00000000,0xFFFFFFFF);
+
         vfs_close(f);
-        kprint("created ramfs\r\n");
-        while(true);
         panic(PANIC_TODO);
 }

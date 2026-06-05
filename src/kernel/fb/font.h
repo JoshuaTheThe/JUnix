@@ -1,0 +1,19 @@
+
+#ifndef FONT_H_
+#define FONT_H_
+
+typedef struct
+{
+    unsigned char_width;
+    unsigned char_height;
+    const char * font_name;
+    unsigned char first_char;
+    unsigned char last_char;
+    unsigned char * font_bitmap;
+} font_t;
+
+extern unsigned char console_font_8x8[];
+extern font_t font_8x8;
+
+#endif
+

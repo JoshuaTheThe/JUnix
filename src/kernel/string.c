@@ -62,13 +62,13 @@ int strnlen(const char *const A, unsigned long Len)
         return Len;
 }
 
-void memcpy(void *Destination, void *const Source, const unsigned long Len)
+void memcpy(void *Destination, const void *const Source, const unsigned long Len)
 {
         not_optional(Destination);
         not_optional(Source);
         for (unsigned long i = 0; i < Len; ++i)
         {
-                ((char *)Destination)[i] = ((char *)Source)[i];
+                ((char *)Destination)[i] = ((const char *const)Source)[i];
         }
 }
 

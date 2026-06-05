@@ -55,6 +55,7 @@ typedef struct filesystem
 } filesystem_t;
 
 int vfs_init(void);
+int vfs_init_dev_mnt(void);
 int vfs_mount(const char *path, filesystem_t *fs, void *data);
 int vfs_open(const char *path, file_t **f);
 int vfs_close(file_t *f);

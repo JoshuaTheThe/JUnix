@@ -78,7 +78,6 @@ int scheduler_mount(vnode_t *node, void *data) // not allowed to unmount
 {
         (void)node;
         (void)data;
-        kprint("mounting proc/fs in %p\r\n", node);
         node->ops = &ops;
         current_process_fil = scheduler_add_process((task_state_registers_t){0}, "krnl");
         return 0;
@@ -90,17 +89,15 @@ void scheduler_init(void)
 {
         // stage #1, create proc dir
         // (if not found)
-        kprint("searching for proc dir\r\n");
         if (vfs_lookup("/proc", &proc) < 0)
         {
-                kprint("proc not found\r\n");
                 vnode_t *root;
                 if (vfs_lookup("/",&root) < 0)
                         panic(PANIC_TODO);
-                kprint("creating proc\r\n");
                 proc=scheduler_mkdir(root, "proc", VFS_DIRECTORY);
         }
 
         vfs_mount("/proc", &fs, NULL);
+        kprint(" [krnl] scheduler started\r\n");
 }
 

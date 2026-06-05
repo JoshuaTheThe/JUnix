@@ -3,8 +3,12 @@
 #include <string.h>
 #include <mm/alloc.h>
 #include <panic.h>
+#include <fs/ramfs/ramfs.h>
+#include <drivers/kprint.h>
 
 vnode_t *root_vnode = NULL;
+
+filesystem_t ramfs = {0};
 
 int vfs_init(void)
 {
@@ -14,7 +18,17 @@ int vfs_init(void)
         root_vnode->name = "/";
         root_vnode->ops = &dir_ops;
         root_vnode->flags = 0;
-        
+        ramfs = ramfs_create_fs();
+        if (vfs_mount("/", &ramfs, NULL) != 0)
+        {
+                kprint(" [krnl] could not create ramfs\r\n");
+                panic(PANIC_TODO);
+        }
+        return 0;
+}
+
+int vfs_init_dev_mnt(void)
+{ 
         // Create /dev directory
         vnode_t *dev = kmalloc(sizeof(vnode_t));
         memset(dev, 0, sizeof(vnode_t));
