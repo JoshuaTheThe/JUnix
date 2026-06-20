@@ -9,7 +9,7 @@
 task_state_registers_t scratch_proc = {0};
 uint64_t ticks_since_boot = 0;
 
-vnode_t *proc = NULL, *current_process_fil = NULL;
+vnode_t *proc = NULL, *current_process_fil = NULL, *override_next = NULL;
 
 vnode_t *scheduler_mkdir(vnode_t *p, char *name, uint32_t flags)
 {
@@ -47,9 +47,21 @@ void scheduler_next(void)
 {
         not_optional(current_process_fil);
         not_optional(proc);
-        current_process_fil = current_process_fil->next;
-        if (!current_process_fil)
-                current_process_fil = proc->children;
+        do
+        {
+                if (!override_next)
+                {
+                        current_process_fil = current_process_fil->next;
+                        if (!current_process_fil)
+                                current_process_fil = proc->children;
+                }
+                else
+                {
+                        current_process_fil = override_next;
+                        override_next = NULL;
+                }
+        }
+        while (!((task_t *)current_process_fil->private)->active);
         ackint();
 }
 
@@ -67,6 +79,7 @@ vnode_t *scheduler_add_process(task_state_registers_t initial_regs, char *name)
         not_optional(task);
         task->regs = initial_regs;
         task->pid  = new_pid++;
+        task->active = true;
         
         vnode_t *vn = vfs_mkdir(proc, name, VFS_DIRECTORY);
         not_optional(vn);
@@ -101,3 +114,15 @@ void scheduler_init(void)
         kprint(" [krnl] scheduler started\r\n");
 }
 
+vnode_t *scheduler_find_process(pid_t pid)
+{
+        vnode_t *node = proc->children;
+        while (node)
+        {
+                if (((task_t *)node->private)->pid == pid)
+                        return node;
+                node = node->next;
+        }
+
+        return NULL;
+}

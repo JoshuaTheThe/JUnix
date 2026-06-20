@@ -14,10 +14,13 @@ typedef enum
         SYS_WRITE,
         SYS_OPEN,
         SYS_CLOSE,
-} SYSCMD;
+} syscmd_t;
 
 void sys_handler(void);
 void sys_wrapper(void);
+void sys_yield(void);
+
+void exit(int code);
 
 #endif
 
