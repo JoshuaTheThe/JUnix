@@ -22,10 +22,8 @@ void sys_handler(void)
 
 void sys_yield(void)
 {
-        cli();
-        uint64_t start = ticks_since_boot;
         sti();
-        while (start == ticks_since_boot);
+        pause();
 }
 
 void exit(int code)

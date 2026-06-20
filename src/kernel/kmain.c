@@ -56,6 +56,7 @@ void kmain(void)
         pid_t pid = create();
         sti();
         while (process_exists(pid))
-                ;
+                sys_yield();
+        sys_yield();
         panic(PANIC_TODO);
 }

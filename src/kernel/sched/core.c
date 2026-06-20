@@ -41,13 +41,12 @@ void scheduler_load(void)
         memcpy(&scratch_proc, &task->regs, sizeof(task->regs));
 }
 
-// simple robin round scheduler
-// iterate to next, wrap around to first
 void scheduler_next(void)
 {
         not_optional(current_process_fil);
         not_optional(proc);
-        do
+        vnode_t *to_remove = NULL;
+        while(1)
         {
                 if (!override_next)
                 {
@@ -60,8 +59,30 @@ void scheduler_next(void)
                         current_process_fil = override_next;
                         override_next = NULL;
                 }
+
+                if (current_process_fil && ((task_t *)current_process_fil->private)->active)
+                        break;
+
+                if (current_process_fil)
+                {
+                        to_remove = current_process_fil;
+                        task_t *task = (task_t *)to_remove->private;
+                        if (to_remove->next)
+                                to_remove->next->prev = to_remove->prev;
+                        if (to_remove->prev)
+                                to_remove->prev->next = to_remove->next;
+                        if (to_remove->parent->children == to_remove)
+                                to_remove->parent->children = to_remove->next;
+                        kfree(task);
+                        kfree(to_remove);
+                        current_process_fil = proc->children;
+                }
+                else
+                {
+                        break;
+                }
         }
-        while (!((task_t *)current_process_fil->private)->active);
+
         ackint();
 }
 

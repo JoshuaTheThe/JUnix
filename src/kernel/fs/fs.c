@@ -205,11 +205,20 @@ long vfs_lseek(file_t *f, long offset, int whence)
         return new_offset;
 }
 
-void vfs_append_child(vnode_t  *f, vnode_t *x)
+void vfs_append_child(vnode_t *f, vnode_t *x)
 {
-        x->next = f->children;
+        x->next = NULL;
         x->parent = f;
-        f->children = x;
+        if (!f->children)
+        {
+                f->children = x;
+                return;
+        }
+        vnode_t *last = f->children;
+        while (last->next)
+                last = last->next;
+        last->next = x;
+        x->prev = last;
 }
 
 vnode_t *vfs_mkdir(vnode_t *p, char *name, uint32_t flags)
