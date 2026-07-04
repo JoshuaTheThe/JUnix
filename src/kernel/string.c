@@ -99,6 +99,20 @@ int strncmp(const char *const Lhs, const char *const Rhs, unsigned long Len)
         return 0;
 }
 
+int strcmp(const char *const Lhs, const char *const Rhs)
+{
+        not_optional(Lhs);
+        not_optional(Rhs);
+        for (unsigned long i = 0;; i++)
+        {
+                if (Lhs[i] != Rhs[i] || Lhs[i] == '\0')
+                {
+                        return Lhs[i] - Rhs[i];
+                }
+        }
+        return 0;
+}
+
 int strnlen(const char *const A, unsigned long Len)
 {
         not_optional(A);

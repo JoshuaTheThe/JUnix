@@ -4,6 +4,7 @@
 
 #include <sched/task.h>
 #include <sched/trap.h>
+#include <sched/user.h>
 #include <fs/fs.h>
 
 typedef uint64_t pid_t;
@@ -13,7 +14,10 @@ typedef struct task_t
         task_state_registers_t regs;
         pid_t                  pid;
         bool                   active;
-
+        userid_t               user;
+        char                 **argv;
+        int                    argc;
+        
         // in future add things like page tabels and perms
         // this is ring0 for now
 } task_t;
