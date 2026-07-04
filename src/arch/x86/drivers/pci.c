@@ -1,5 +1,5 @@
 
-#include <drivers/pci/pci.h>
+#include <drivers/pci.h>
 #include <fs/fs.h>
 #include <string.h>
 #include <mm/alloc.h>

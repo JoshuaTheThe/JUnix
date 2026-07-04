@@ -1,7 +1,7 @@
 #ifndef TRAP_H
 #define TRAP_H
 
-#include <io.h>
+#include <cpu/io.h>
 
 __attribute__((__used__))
 static void ackint(void)

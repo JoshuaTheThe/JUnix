@@ -12,7 +12,7 @@
 #include <panic.h>
 #include <drivers/fb/fb.h>
 #include <fb/render.h>
-#include <sys.h>
+#include <interrupts/sys.h>
 
 void sub_start(void)
 {

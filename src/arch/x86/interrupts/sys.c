@@ -1,5 +1,5 @@
 
-#include <sys.h>
+#include <interrupts/sys.h>
 #include <arch.h>
 #include <sched/core.h>
 

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <io.h>
+#include <cpu/io.h>
 
 #define RTC_ADDRESS_PORT 0x70
 #define RTC_DATA_PORT 0x71

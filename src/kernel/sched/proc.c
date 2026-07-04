@@ -1,7 +1,7 @@
 
 #include <sched/core.h>
 #include <sched/proc.h>
-#include <sys.h>
+#include <interrupts/sys.h>
 
 bool process_exists(pid_t pid)
 {

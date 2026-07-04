@@ -1,5 +1,5 @@
-#include <drivers/pit.h>
-#include <io.h>
+#include <interrupts/pit.h>
+#include <cpu/io.h>
 #include <arch.h>
 #include <drivers/kprint.h>
 #include <panic.h>

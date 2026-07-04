@@ -1,6 +1,6 @@
-#include <drivers/idt.h>
+#include <cpu/idt.h>
+#include <interrupts/sys.h>
 #include <arch.h>
-#include <sys.h>
 
 static idt_entry_t idt[256];
 static idtp_t idtp;

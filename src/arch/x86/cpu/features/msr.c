@@ -1,4 +1,4 @@
-#include <features/feature.h>
+#include <cpu/features/feature.h>
 
 void MSRGet(uint32_t msr, uint32_t *lo, uint32_t *hi)
 {

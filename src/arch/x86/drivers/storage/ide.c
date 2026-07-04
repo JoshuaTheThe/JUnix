@@ -1,9 +1,9 @@
 
-#include <drivers/ide/ide.h>
+#include <drivers/storage/ide.h>
 #include <arch.h>
 #include <fs/fs.h>
 #include <mm/alloc.h>
-#include <drivers/pci/pci.h>
+#include <drivers/pci.h>
 
 IDEDriver_t IDEState = {0};
 uint8_t package[2048], atapi_packet[2048];

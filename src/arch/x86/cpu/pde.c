@@ -1,5 +1,5 @@
 
-#include <drivers/pde.h>
+#include <cpu/pde.h>
 #include <string.h>
 #include <mm/bitmap.h>
 #include <drivers/kprint.h>

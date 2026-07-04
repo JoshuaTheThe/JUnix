@@ -1,5 +1,5 @@
-#include <features/feature.h>
-#include <features/sse.h>
+#include <cpu/features/feature.h>
+#include <cpu/features/sse.h>
 #include <drivers/kprint.h>
 #include <panic.h>
 

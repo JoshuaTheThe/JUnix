@@ -1,15 +1,15 @@
 
 #include <arch.h>
 #include <stdint.h>
-#include <io.h>
-#include <drivers/gdt.h>
-#include <drivers/idt.h>
-#include <drivers/pit.h>
+#include <cpu/io.h>
+#include <cpu/gdt.h>
+#include <cpu/idt.h>
+#include <interrupts/pit.h>
 #include <panic.h>
 #include <boot/multiboot.h>
 
-#include <features/feature.h>
-#include <drivers/pde.h>
+#include <cpu/features/feature.h>
+#include <cpu/pde.h>
 
 enum cpu_vendor
 {

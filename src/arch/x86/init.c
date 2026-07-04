@@ -10,9 +10,9 @@
 #include <arch.h>
 #include <string.h>
 #include <panic.h>
-#include <drivers/ide/ide.h>
-#include <drivers/pci/pci.h>
-#include <features/feature.h>
+#include <drivers/storage/ide.h>
+#include <drivers/pci.h>
+#include <cpu/features/feature.h>
 
 void init(int m, uintptr_t a)
 {

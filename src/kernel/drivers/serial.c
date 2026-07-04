@@ -1,6 +1,6 @@
 
 #include <drivers/serial.h>
-#include <io.h>
+#include <cpu/io.h>
 #include <arch.h>
 #include <stdint.h>
 #include <fs/fs.h>

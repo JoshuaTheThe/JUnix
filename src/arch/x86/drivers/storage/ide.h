@@ -1,10 +1,10 @@
 #ifndef IDE_H
 #define IDE_H
 
-#include <drivers/pci/pci.h>
+#include <drivers/pci.h>
 #include <drivers/kprint.h>
-#include <drivers/pit.h>
-#include <io.h>
+#include <interrupts/pit.h>
+#include <cpu/io.h>
 
 #define ATA_SR_BSY 0x80  // Busy
 #define ATA_SR_DRDY 0x40 // Drive ready

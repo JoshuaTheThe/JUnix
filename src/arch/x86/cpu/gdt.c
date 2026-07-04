@@ -1,4 +1,4 @@
-#include <drivers/gdt.h>
+#include <cpu/gdt.h>
 #include <string.h>
 
 static gdtEntry_t gdt[GDT_SIZE];
