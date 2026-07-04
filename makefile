@@ -14,8 +14,8 @@ override ASFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.s' | sed '
 
 override KCC := clang
 override KAS := clang
-override KLD := ld
-override KCFLAGS := -pipe -Wall -Wextra -c -O3 -Wpedantic -Wshadow -Wcast-qual
+override KLD := ld.lld
+override KCFLAGS := -pipe -Wall -Wextra -c -O3 -Wpedantic -g -fno-stack-protector
 override KCFLAGS += 
 override ASFLAGS += 
 override KLDFLAGS :=

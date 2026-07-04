@@ -41,7 +41,13 @@ if grub-file --is-x86-multiboot2 bin/junix_x86.o; then
     sudo losetup -d ${LOOP}
     
     # Run QEMU with HDD
-    qemu-system-x86_64 -hda bin/junix_x86.hdd -hdb scripts/ufs.img -m 64 # -nographic
+    qemu-system-x86_64 \
+    -drive file=bin/junix_x86.hdd,if=ide,index=0,format=raw \
+    -drive file=scripts/ufs.img,if=ide,index=1,format=raw \
+    -m 256 \
+    -debugcon stdio \
+    -no-reboot \
+    -no-shutdown
 else
     echo "the file is not multiboot"
 fi

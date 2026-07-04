@@ -8,6 +8,9 @@
 #include <panic.h>
 #include <boot/multiboot.h>
 
+#include <features/feature.h>
+#include <drivers/pde.h>
+
 enum cpu_vendor
 {
         CPU_INTEL,
@@ -60,9 +63,12 @@ int arch_temp_mc(void)
 void arch_init(void)
 {
         cli();
+        PDEInit();
+        FeaturesInit();
         gdt_init();
         idt_init();
-        pit_init(100);
+        pit_init(250);
+        cli();
 }
 
 char *arch_identify(void)

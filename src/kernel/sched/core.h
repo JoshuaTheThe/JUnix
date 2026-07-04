@@ -24,7 +24,7 @@ vnode_t *scheduler_find_process(pid_t pid);
 
 extern task_state_registers_t scratch_proc;
 extern vnode_t *override_next, *current_process_fil;
-extern uint64_t ticks_since_boot;
+extern uint32_t ticks_since_boot;
 
 #endif
 

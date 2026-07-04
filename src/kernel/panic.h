@@ -32,6 +32,8 @@ typedef enum
         PANIC_NO_PAGE,
         PANIC_DOUBLE_VIRT_ALLOC,
         PANIC_CORRUPT_FS,
+        PANIC_REQUIRED_FEATURE,
+        PANIC_DIVIDE_BY_ZERO,
 } panic_code_t;
 
 typedef enum

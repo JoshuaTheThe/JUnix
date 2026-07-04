@@ -5,11 +5,9 @@
         .extern trap_next
         .extern sys_handler
 timer_int:
-        cli
-        jmp trap_next
 default_int:
         cli
-        jmp default_int
+        jmp trap_next
 sys_wrapper:
         cli
         movl    %eax, (0*4+scratch_proc)

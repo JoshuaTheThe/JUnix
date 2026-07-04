@@ -6,6 +6,7 @@ SECTIONS
 
         .text : {
                 *(.multiboot)
+                *(.multiboot2)
                 *(.text)
                 *(.text.*)      /* Catch all .text.* sections */
                 *(.text*)
@@ -82,7 +83,15 @@ SECTIONS
                 *(.stabstr.*)
         }
         
-        . = ALIGN(4);
+        . = ALIGN(16);
+        . = ALIGN(0x10000);
+        . += 0x10000;
+        .stack (NOLOAD) :
+        {
+                stack_bottom = .;
+                . += 0x20000;
+                stack_top = .;
+        }
 
         /DISCARD/ : {
                 *(.note.GNU-stack)

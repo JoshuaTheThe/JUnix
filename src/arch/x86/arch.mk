@@ -1,5 +1,11 @@
 override ARCH := x86
-override ARCH_CFLAGS += -m32 -fno-stack-protector -nostdlib -ffreestanding  -fpack-struct
+override ARCH_CFLAGS += -m32 -fno-stack-protector -nostdlib -ffreestanding  -fpack-struct \
+    -mno-sse \
+    -mno-sse2 \
+    -mno-mmx \
+    -mno-3dnow \
+    -mno-avx \
+    -mfpmath=387
 override ARCH_ASFLAGS += -m32 -fno-stack-protector -nostdlib -ffreestanding
 override ARCH_KLDFLAGS += -melf_i386
 override ARCH_OUTPUT_SUFFIX := _x86.o

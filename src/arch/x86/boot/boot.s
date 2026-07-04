@@ -41,6 +41,8 @@ multiboot_header:
 multiboot_header_end:
         .section .text
         .global _start
+        .global boot_page_directory
+        .global boot_page_table1
         .type _start, @function
         .extern fb_init
 _start: mov $stack_top, %esp
@@ -54,11 +56,7 @@ _start: mov $stack_top, %esp
         jmp 1b
         .size _start, . - _start
         .section .bss
-        .align 16
-stack_bottom:
-        .skip 65536*4
-stack_top:
-	.align 4096
+        .align 4096
 boot_page_directory:
 	.skip 4096
 boot_page_table1:

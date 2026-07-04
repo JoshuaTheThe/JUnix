@@ -7,7 +7,7 @@
 #include <drivers/kprint.h>
 
 task_state_registers_t scratch_proc = {0};
-uint64_t ticks_since_boot = 0;
+uint32_t ticks_since_boot = 0;
 
 vnode_t *proc = NULL, *current_process_fil = NULL, *override_next = NULL;
 
