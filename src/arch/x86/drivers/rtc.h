@@ -23,5 +23,6 @@ typedef struct
 } rtcTime_t;
 
 rtcTime_t rtcGetTime(void);
+void rtcInit(void);
 
 #endif

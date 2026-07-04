@@ -13,6 +13,7 @@
 #include <drivers/storage/ide.h>
 #include <drivers/pci.h>
 #include <cpu/features/feature.h>
+#include <drivers/rtc.h>
 
 void init(int m, uintptr_t a)
 {
@@ -23,6 +24,7 @@ void init(int m, uintptr_t a)
         arch_init();
         scheduler_init();
         fb_init(m,a);
+        rtcInit();
         pciEnumerateDevices(pciRegister);
 
         const size_t devcnt = pciGetDeviceCount();
