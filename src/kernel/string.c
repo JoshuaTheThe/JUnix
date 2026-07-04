@@ -126,6 +126,17 @@ int strnlen(const char *const A, unsigned long Len)
         return Len;
 }
 
+int strlen(const char *const A)
+{
+        not_optional(A);
+        for (unsigned long i = 0;; ++i)
+        {
+                if (A[i])
+                        continue;
+                return i;
+        }
+}
+
 void memcpy(void *Destination, const void *const Source, const unsigned long Len)
 {
         not_optional(Destination);

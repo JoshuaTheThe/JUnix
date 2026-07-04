@@ -4,6 +4,8 @@
 #include <drivers/fb/fb.h>
 #include <sched/core.h>
 #include <fs/fs.h>
+#include <fs/null.h>
+#include <fs/random.h>
 #include <fs/ramfs/ramfs.h>
 #include <mm/bitmap.h>
 #include <mm/alloc.h>
@@ -26,7 +28,9 @@ void init(int m, uintptr_t a)
         fb_init(m,a);
         rtcInit();
         pciEnumerateDevices(pciRegister);
-
+        CreateNullDevice("null");
+        CreateRandomDevice("random");
+        
         const size_t devcnt = pciGetDeviceCount();
         pci_device_t *dev = pciGetOriginalDevice(0);
         for (size_t i = 0; i < devcnt; ++i)
@@ -43,6 +47,25 @@ void init(int m, uintptr_t a)
                                 kprint(" [krnl] model=%s type=%d size=%dMB\r\n", IDEState.IDEDev[d].Model, IDEState.IDEDev[d].Type, (IDEState.IDEDev[d].Size * 512) / 1024 / 1024);
                         }
                 }
+        }
+
+        file_t *ide0;
+        if (vfs_open("dev/ide0", &ide0) < 0)
+                panic(PANIC_TODO);
+        char buf[512];
+        vfs_lseek(ide0, 0, SEEK_SET);
+        if (vfs_read(ide0, buf, sizeof(buf)) < 512)
+                panic(PANIC_TODO);
+        vfs_close(ide0);
+
+        for (size_t i = 0; i < sizeof(buf) >> 4; ++i)
+        {
+                for (size_t j = 0; j < 16; ++j)
+                {
+                        kprint("%d ", buf[i * 16 + j]);
+                }
+
+                kprint("\r\n");
         }
 }
 

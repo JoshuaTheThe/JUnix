@@ -1,0 +1,36 @@
+
+the problem is, i have been doing background stuff,
+so its kinda hard to show,
+also i rewrote it like 10 times (oof)
+
+scheduler,
+ide,
+vfs,
+ramfs,
+boot,
+arch hal,
+pci,
+serial
+fb,
+rtc,
+syscalls (unimpl)
+custom fs called ufs (i didn't know there was an fs already called ufs)
+fat* (almost)
+
+all i need to do, is add the dirops.
+thats it,
+
+once i do that,
+it would be able;
+to load a program from file on a disk (a file),
+to a section of memory, register it in the scheduler,
+and execute programs!!!
+
+also im gonna add user stuff soon.
+(currently single user, unlike dekos (comes with fs not being done))
+
+the OS will assume (for now)
+that ide0 is the boot device.
+and mount it to /
+(fat)
+

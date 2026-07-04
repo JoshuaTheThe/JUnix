@@ -6,9 +6,9 @@ static int ramfs_read(file_t *f, void *buf, size_t count);
 static int ramfs_write(file_t *f, const void *buf, size_t count);
 static int ramfs_open(vnode_t *v, file_t **f);
 static int ramfs_close(file_t *f);
-static long ramfs_lseek(file_t *f, long offset, int whence);
 static void ramfs_release(vnode_t *v);
 static vnode_t *ramfs_mkdir(vnode_t *p, char *name, uint32_t flags);
+long ramfs_lseek(file_t *f, long offset, int whence);
 
 static file_ops_t ramfs_file_ops =
 {
@@ -86,20 +86,20 @@ static int ramfs_write(file_t *f, const void *buf, size_t count)
         return count;
 }
 
-static int ramfs_open(vnode_t *v, file_t **f)
+int ramfs_open(vnode_t *v, file_t **f)
 {
         (void)f;
         (void)v;
         return 0;
 }
 
-static int ramfs_close(file_t *f)
+int ramfs_close(file_t *f)
 {
         (void)f;
         return 0;
 }
 
-static long ramfs_lseek(file_t *f, long offset, int whence)
+long ramfs_lseek(file_t *f, long offset, int whence)
 {
         vnode_t *v = f->vnode;
         ramfs_file_t *rf = v->private;

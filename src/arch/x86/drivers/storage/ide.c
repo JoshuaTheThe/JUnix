@@ -4,9 +4,77 @@
 #include <fs/fs.h>
 #include <mm/alloc.h>
 #include <drivers/pci.h>
+#include <math.h>
 
 IDEDriver_t IDEState = {0};
 uint8_t package[2048], atapi_packet[2048];
+
+static int read(file_t *f, void *buf, size_t count)
+{
+        if (!f || !buf || !f->vnode || !f->vnode->private)
+                return -1;
+        size_t drive = *(size_t *)f->vnode->private;
+        size_t lba = f->offset >> 9;
+        size_t off = f->offset & 511;
+        uint8_t *dest = (uint8_t*)buf;
+        size_t remaining = count;
+        size_t bytes_read = 0;
+    
+        if (off > 0)
+        {
+                uint8_t sector[512];
+                IDEReadSectors(drive, 1, lba, 0x10, (uintptr_t)sector);
+                size_t to_copy = min(remaining, 512 - off);
+                memcpy(dest, sector + off, to_copy);
+                dest += to_copy;
+                bytes_read += to_copy;
+                remaining -= to_copy;
+                lba++;
+        }
+    
+        if (remaining >= 512)
+        {
+                size_t sector_count = remaining >> 9;  // remaining / 512
+                size_t sector_bytes = sector_count << 9; // sector_count * 512
+                IDEReadSectors(drive, sector_count, lba, 0x10, (uintptr_t)dest);
+                dest += sector_bytes;
+                bytes_read += sector_bytes;
+                remaining -= sector_bytes;
+                lba += sector_count;
+        }
+    
+        if (remaining > 0)
+        {
+                uint8_t sector[512];
+                IDEReadSectors(drive, 1, lba, 0x10, (uintptr_t)sector);
+                memcpy(dest, sector, remaining);
+                bytes_read += remaining;
+        }
+        f->offset += bytes_read;
+        return bytes_read;
+}
+
+static int write(file_t *f, const void *buf, size_t count)
+{
+        (void)f;
+        (void)buf;
+        (void)count;
+        return -1;
+}
+
+extern long ramfs_lseek(file_t *f, long offset, int whence);
+
+static file_ops_t file_ops =
+{
+        .read = read,
+        .write = write,
+        .open = NULL,
+        .close = NULL,
+        .lseek = ramfs_lseek,
+        .release = NULL,
+        .capture = NULL,
+        .mkdir = NULL,
+};
 
 void IDEWaitIRQ(void)
 {
@@ -257,10 +325,10 @@ void IDEInitialise(void)
                         vnode_t *ndev = kmalloc(sizeof(vnode_t));
                         memset(ndev, 0, sizeof(vnode_t));
                         ndev->name = clone;
-                        ndev->ops = NULL;
+                        ndev->ops = &file_ops;
                         ndev->flags = VFS_DIRECTORY;
-                        ndev->private = kmalloc(sizeof(IDEDev));
-                        memcpy(ndev->private, &IDEState.IDEDev[count], sizeof(IDEDev));
+                        ndev->private = kmalloc(sizeof(int));
+                        *((int *)ndev->private) = IDEState.IDEDev[count].Drive;
                         vfs_append_child(vdev, ndev);
                         count++;
                 }

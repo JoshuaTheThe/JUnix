@@ -83,7 +83,7 @@ int vfs_lookup(const char *path, vnode_t **out)
                 vnode_t *child = current->children;
                 while (child)
                 {
-                        if (!strncmp(child->name, segment, 1024))
+                        if (strlen(child->name) == strlen(segment) && !strncmp(child->name, segment, 1024))
                         {
                                 current = child;
                                 break;
