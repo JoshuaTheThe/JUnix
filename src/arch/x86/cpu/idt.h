@@ -24,5 +24,6 @@ typedef struct __attribute__((__packed__))
 void idt_init(void);
 void default_int(void);
 void timer_int(void);
+void ide_int(void);
 
 #endif

@@ -8,29 +8,40 @@
 static void itoh(uint32_t value, char buffer[static 9], size_t bufsize)
 {
         static const char hex_digits[16] = "0123456789abcdef";
-        if (bufsize < 9)
+        if (bufsize < 2)
         {
                 if (bufsize > 0) buffer[0] = '\0';
                 return;
         }
-    
-        for (int i = 7; i >= 0; i--)
+        
+        int digits = 0;
+        uint32_t temp = value;
+        do
+        {
+                digits++;
+                temp >>= 4;
+        } while (temp != 0 && digits < 8);
+        
+        if (digits < 2) digits = 2;
+        int max_digits = (bufsize < 9) ? (int)bufsize - 1 : 8;
+        if (digits > max_digits) digits = max_digits;
+        
+        int start_pos = digits - 1;
+        for (int i = start_pos; i >= 0; i--)
         {
                 buffer[i] = hex_digits[value & 0xF];
                 value >>= 4;
         }
         
-        buffer[8] = '\0';
+        buffer[digits] = '\0';
 }
 
 static void puthex(uint32_t value)
 {
         char hex_buffer[9] = {0};
         itoh(value, hex_buffer, sizeof(hex_buffer));
-        // UNSAFE
-        for (size_t i = 0; i < sizeof(hex_buffer) - 1; i++)
+        for (size_t i = 0; hex_buffer[i] != '\0'; i++)
         {
-                // UNSAFE
                 serial_putchar(hex_buffer[i]);
         }
 }

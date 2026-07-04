@@ -2,12 +2,19 @@
         .global timer_int
         .global default_int
         .global sys_wrapper
+        .global ide_int
         .extern trap_next
         .extern sys_handler
+        .extern IDEIrq
 timer_int:
 default_int:
         cli
         jmp trap_next
+ide_int:
+        cli
+        jmp IDEIrq
+        sti
+        iret
 sys_wrapper:
         cli
         movl    %eax, (0*4+scratch_proc)

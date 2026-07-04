@@ -13,7 +13,7 @@ static int read(file_t *f, void *buf, size_t count)
 {
         if (!f || !buf || !f->vnode || !f->vnode->private)
                 return -1;
-        size_t drive = *(size_t *)f->vnode->private;
+        int drive = *(int *)f->vnode->private;
         size_t lba = f->offset >> 9;
         size_t off = f->offset & 511;
         uint8_t *dest = (uint8_t*)buf;

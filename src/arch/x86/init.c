@@ -62,7 +62,7 @@ void init(int m, uintptr_t a)
         {
                 for (size_t j = 0; j < 16; ++j)
                 {
-                        kprint("%d ", buf[i * 16 + j]);
+                        kprint("%x ", buf[i * 16 + j] & 255);
                 }
 
                 kprint("\r\n");
