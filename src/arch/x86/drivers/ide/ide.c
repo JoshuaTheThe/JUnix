@@ -1,6 +1,9 @@
 
 #include <drivers/ide/ide.h>
 #include <arch.h>
+#include <fs/fs.h>
+#include <mm/alloc.h>
+#include <drivers/pci/pci.h>
 
 IDEDriver_t IDEState = {0};
 uint8_t package[2048], atapi_packet[2048];
@@ -244,6 +247,21 @@ void IDEInitialise(void)
                         }
                         IDEState.IDEDev[count].Model[40] = 0;
 
+                        vnode_t *vdev = NULL;
+                        vfs_lookup("dev", &vdev);
+                        const char *or = pciClassToFileName(1, 1);
+                        int size = strnlen(or, 256);
+                        char *clone = kmalloc(size + 64);
+                        memcpy(clone, or, size);
+                        itoa(&clone[size], count, 10, 0);
+                        vnode_t *ndev = kmalloc(sizeof(vnode_t));
+                        memset(ndev, 0, sizeof(vnode_t));
+                        ndev->name = clone;
+                        ndev->ops = NULL;
+                        ndev->flags = VFS_DIRECTORY;
+                        ndev->private = kmalloc(sizeof(IDEDev));
+                        memcpy(ndev->private, &IDEState.IDEDev[count], sizeof(IDEDev));
+                        vfs_append_child(vdev, ndev);
                         count++;
                 }
         for (int i = 0; i < 4; i++)

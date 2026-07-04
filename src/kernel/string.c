@@ -3,6 +3,56 @@
 #include <panic.h>
 #include <mm/alloc.h>
 
+int itoa(char *dest, int n, int base, bool uppercase)
+{
+        if (dest == NULL) return 0;
+        if (base < 2 || base > 36)
+        {
+                dest[0] = '\0';
+                return 0;
+        }
+    
+        if (n == 0)
+        {
+                dest[0] = '0';
+                dest[1] = '\0';
+                return 1;
+        }
+    
+        bool is_negative = (base == 10 && n < 0);
+        unsigned int num = is_negative ? (unsigned int)(-n) : (unsigned int)n;
+        char temp[64];
+        int i = 0;
+        while (num > 0)
+        {
+                int digit = num % base;
+                if (digit < 10)
+                {
+                        temp[i++] = '0' + digit;
+                }
+                else
+                {
+                        temp[i++] = uppercase ? 
+                                'A' + (digit - 10) : 
+                                'a' + (digit - 10);
+                }
+                num /= base;
+        }
+    
+        if (is_negative)
+        {
+                temp[i++] = '-';
+        }
+    
+        int j = 0;
+        while (i > 0)
+        {
+                dest[j++] = temp[--i];
+        }
+        dest[j] = '\0';
+        return j;
+}
+
 char *UlToString(unsigned long Number)
 {
         // each byte requires at most three digits

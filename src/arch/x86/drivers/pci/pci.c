@@ -443,6 +443,7 @@ void pciRegister(pci_device_t *dev)
         memset(ndev, 0, sizeof(vnode_t));
         ndev->name = clone;
         ndev->ops = NULL;
+        ndev->flags = VFS_DIRECTORY;
         vfs_append_child(vdev, ndev);
 }
 
