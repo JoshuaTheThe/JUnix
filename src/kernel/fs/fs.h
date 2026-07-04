@@ -59,6 +59,7 @@ int vfs_init(void);
 int vfs_init_dev_mnt(void);
 int vfs_mount(const char *path, filesystem_t *fs, void *data);
 int vfs_open(const char *path, file_t **f);
+int vfs_open_direct(vnode_t *node, file_t **f);
 int vfs_close(file_t *f);
 int vfs_lookup(const char *path, vnode_t **out);
 int vfs_read(file_t *f, void *buf, size_t count);

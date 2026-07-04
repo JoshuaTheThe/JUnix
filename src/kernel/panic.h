@@ -10,6 +10,7 @@
 
 #define panic(Code) panic_impl(__FILE__, __LINE__, Code, #Code, PANIC_CLASS_SUPERVISOR)
 #define not_optional(e) do { if ((e) == NULL) panic(PANIC_NULL_POINTER_DEREFERENCE); } while (0)
+#define assert(e) do { if (!(e)) panic(PANIC_FAILED_ASSERT); } while (0)
 
 typedef enum
 {
@@ -26,6 +27,11 @@ typedef enum
         PANIC_UNHANDLED_INTERRUPT,
         PANIC_OVERHEAT,
         PANIC_UNSUPPORTED_FS_OP,
+        PANIC_FAILED_ASSERT,
+        PANIC_NO_PAGE_DIR,
+        PANIC_NO_PAGE,
+        PANIC_DOUBLE_VIRT_ALLOC,
+        PANIC_CORRUPT_FS,
 } panic_code_t;
 
 typedef enum

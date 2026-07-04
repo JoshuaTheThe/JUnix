@@ -107,12 +107,8 @@ int vfs_mount(const char *path, filesystem_t *fs, void *data)
         return fs->mount(mountpoint, data);
 }
 
-int vfs_open(const char *path, file_t **out)
+int vfs_open_direct(vnode_t *v, file_t **out)
 {
-        not_optional(path);
-        not_optional(out);
-        vnode_t *v;
-        if (vfs_lookup(path, &v) != 0) return -1;
         file_t *f = kmalloc(sizeof(file_t));
         if (!f) return -1;
         memset(f, 0, sizeof(file_t));
@@ -133,6 +129,15 @@ int vfs_open(const char *path, file_t **out)
 
         *out = f;
         return 0;
+}
+
+int vfs_open(const char *path, file_t **out)
+{
+        not_optional(path);
+        not_optional(out);
+        vnode_t *v;
+        if (vfs_lookup(path, &v) != 0) return -1;
+        return vfs_open_direct(v, out);
 }
 
 int vfs_close(file_t *f)

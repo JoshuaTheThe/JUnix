@@ -5,8 +5,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define TOTAL_BITMAP (1024 * 1024)
 #define PAGE_SIZE (4096)
+#define TOTAL_BITMAP (1024 * 1024)
 
 int pagealloc_nextfree(void);
 void pagealloc_free(void *page);

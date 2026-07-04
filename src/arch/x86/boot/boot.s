@@ -58,3 +58,8 @@ _start: mov $stack_top, %esp
 stack_bottom:
         .skip 65536*4
 stack_top:
+	.align 4096
+boot_page_directory:
+	.skip 4096
+boot_page_table1:
+	.skip 4096

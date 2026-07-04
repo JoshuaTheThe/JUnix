@@ -2,22 +2,22 @@
 clear
 mkdir -p bin/isodir
 
-if grub-file --is-x86-multiboot2 bin/junix_ia32.o; then
+if grub-file --is-x86-multiboot2 bin/junix_x86.o; then
     echo "the file is multiboot"
     mkdir -p bin/isodir/boot/grub
-    cp bin/junix_ia32.o bin/isodir/boot
+    cp bin/junix_x86.o bin/isodir/boot
     cp -rf bin/modules bin/isodir/boot
-    cp src/arch/ia32/grub.cfg bin/isodir/boot/grub/grub.cfg
+    cp src/arch/x86/grub.cfg bin/isodir/boot/grub/grub.cfg
     
     # Create HDD image instead of ISO
-    dd if=/dev/zero of=bin/junix_ia32.hdd bs=1M count=64
+    dd if=/dev/zero of=bin/junix_x86.hdd bs=1M count=64
     
     # Partition and format (using parted and mkfs)
-    parted -s bin/junix_ia32.hdd mklabel msdos
-    parted -s bin/junix_ia32.hdd mkpart primary fat32 1MiB 100%
+    parted -s bin/junix_x86.hdd mklabel msdos
+    parted -s bin/junix_x86.hdd mkpart primary fat32 1MiB 100%
     
     # Setup loop device WITH PARTITION SCANNING
-    LOOP=$(sudo losetup --show -f --partscan bin/junix_ia32.hdd)
+    LOOP=$(sudo losetup --show -f --partscan bin/junix_x86.hdd)
     echo "Loop device: ${LOOP}"
     echo "Partition: ${LOOP}p1"
     
@@ -32,16 +32,16 @@ if grub-file --is-x86-multiboot2 bin/junix_ia32.o; then
     
     # Copy kernel and modules
     sudo mkdir -p /mnt/boot/grub
-    sudo cp bin/junix_ia32.o /mnt/boot/
+    sudo cp bin/junix_x86.o /mnt/boot/
     sudo cp -rf bin/modules /mnt/boot/
-    sudo cp src/arch/ia32/grub.cfg /mnt/boot/grub/
+    sudo cp src/arch/x86/grub.cfg /mnt/boot/grub/
     
     # Cleanup
     sudo umount /mnt
     sudo losetup -d ${LOOP}
     
     # Run QEMU with HDD
-    qemu-system-x86_64 -hda bin/junix_ia32.hdd -m 64 # -nographic
+    qemu-system-x86_64 -hda bin/junix_x86.hdd -hdb scripts/ufs.img -m 64 # -nographic
 else
     echo "the file is not multiboot"
 fi
