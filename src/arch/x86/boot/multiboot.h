@@ -2,7 +2,6 @@
 #define _ARCH_H
 
 #define HAS_TEMPERATURE
-#define MODULE
 #include <stdint.h>
 
 struct multiboot_tag
