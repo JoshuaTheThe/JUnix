@@ -21,14 +21,14 @@ int task_open(task_t *task, char *path, int flags, int mode)
         if ((size_t)fd==task->fd.capacity||!task->fd.items)
         {
                 void *new = kmalloc(task->fd.capacity + 8 * sizeof(file_t *));
-                if (task->fd.capacity > 0)
+                if (task->fd.capacity > 0 && task->fd.items)
                 {
                         memcpy(new, task->fd.items, task->fd.capacity * sizeof(file_t *));
                         kfree(task->fd.items);
                 }
                 task->fd.capacity += 8;
                 task->fd.items = new;
-                return task->fd.capacity - 8;
+                fd = task->fd.capacity - 8;
         }
 
         if (vfs_open(path, &task->fd.items[fd]) < 0)

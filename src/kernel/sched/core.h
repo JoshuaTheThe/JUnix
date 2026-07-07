@@ -14,6 +14,7 @@ typedef struct task_t
         task_state_registers_t regs;
         pid_t                  pid;
         bool                   active;
+        bool                   waiting;
         userid_t               user;
         char                 **argv;
         int                    argc;
@@ -24,6 +25,13 @@ typedef struct task_t
                 file_t       **items; // if null, empty
                 size_t         capacity;
         } fd;
+
+        struct
+        {
+                pid_t   *items; // yes
+                size_t   capacity;
+                int      result;
+        } waiting_for_me;
         
         // in future add things like page tabels and perms
         // this is ring0 for now
