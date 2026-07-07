@@ -9,24 +9,26 @@
 #include <fs/ramfs/ramfs.h>
 #include <mm/bitmap.h>
 #include <mm/alloc.h>
-#include <arch.h>
 #include <string.h>
 #include <panic.h>
 #include <drivers/storage/ide.h>
 #include <drivers/pci.h>
 #include <cpu/features/feature.h>
+#include <cpu/cpu.h>
 #include <drivers/rtc.h>
 
 void init(int m, uintptr_t a)
 {
-        cli();
+        cpu_di();
         if (vfs_init() != 0 || vfs_init_dev_mnt() != 0)
                 panic(PANIC_TODO);
+        cpu_init();
         serial_init();
-        arch_init();
         scheduler_init();
         fb_init(m,a);
         rtcInit();
+
+        vfs_create("/dev", "pci", 0);
         pciEnumerateDevices(pciRegister);
         CreateNullDevice("null");
         CreateRandomDevice("random");
@@ -50,7 +52,7 @@ void init(int m, uintptr_t a)
         }
 
         file_t *ide0;
-        if (vfs_open("dev/ide0", &ide0) < 0)
+        if (vfs_open("/dev/ide0", &ide0) < 0)
                 panic(PANIC_TODO);
         char buf[512];
         vfs_lseek(ide0, 0, SEEK_SET);
@@ -67,5 +69,27 @@ void init(int m, uintptr_t a)
 
                 kprint("\r\n");
         }
-}
 
+        file_t *rtc;
+        if (vfs_open("/dev/rtc", &rtc) < 0)
+        {
+                kprint(" [krnl] no rtc present!\r\n");
+                return;
+        }
+
+        rtcTime_t time;
+        if ((size_t)vfs_read(rtc, &time, sizeof(time)) < sizeof(time))
+        {
+                kprint(" [krnl] failed to read the rtc\r\n");
+                return;
+        }
+
+        kprint(" [krnl] time is: %d/%d/%d %d:%d:%d\r\n",
+                time.day,
+                time.month,
+                time.year,
+                time.hour,
+                time.minute,
+                time.second);
+        vfs_close(rtc);
+}

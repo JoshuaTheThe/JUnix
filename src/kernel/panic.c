@@ -2,7 +2,7 @@
 #include <drivers/serial.h>
 #include <drivers/kprint.h>
 #include <panic.h>
-#include <arch.h>
+#include <cpu/cpu.h>
 #include <string.h>
 
 void list(vnode_t *node, size_t depth)
@@ -18,7 +18,7 @@ void list(vnode_t *node, size_t depth)
 
 _Noreturn void panic_impl(const char *const File, long Line, panic_code_t Code, const char *const CodeAsStr, panic_class_t Class)
 {
-        cli(); // disable interrupts and say, context switching timers for given architecture
+        cpu_di(); // disable interrupts and say, context switching timers for given architecture
         kprint("\r\n -- KERNEL PANIC VIA %s IN PROCESS %d -- \r\n",
                     Class == PANIC_CLASS_SUPERVISOR ? "SUPERVISOR" : "USERSPACE", 0);
         kprint("Kernel Panic Function %x (%s) was raised\r\n", Code, CodeAsStr);
@@ -29,5 +29,5 @@ _Noreturn void panic_impl(const char *const File, long Line, panic_code_t Code, 
                 kprint("Source Location: %s:%d\r\n", File, Line);
         list(root_vnode, 0);
         while (true)
-                pause();
+                cpu_pause();
 }

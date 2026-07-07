@@ -1,15 +1,16 @@
 
-#include <arch.h>
 #include <stdint.h>
 #include <cpu/io.h>
 #include <cpu/gdt.h>
 #include <cpu/idt.h>
-#include <interrupts/pit.h>
+#include <interrupts/timer.h>
 #include <panic.h>
 #include <boot/multiboot.h>
-
 #include <cpu/features/feature.h>
 #include <cpu/pde.h>
+#include <cpu/cpu.h>
+#include <string.h>
+#include <mm/alloc.h>
 
 enum cpu_vendor
 {
@@ -18,7 +19,7 @@ enum cpu_vendor
         CPU_UNKNOWN
 };
 
-enum cpu_vendor arch_cpu_vendor(void)
+static enum cpu_vendor cpu_get_raw_vendor(void)
 {
         uint32_t eax, ebx, ecx, edx;
         __asm__("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "a"(0));
@@ -29,9 +30,10 @@ enum cpu_vendor arch_cpu_vendor(void)
         return CPU_UNKNOWN;
 }
 
-int arch_temp_mc(void)
+
+int32_t cpu_get_temp_mc(void)
 {
-        enum cpu_vendor vendor = arch_cpu_vendor();
+        enum cpu_vendor vendor = cpu_get_raw_vendor();
 
         if (vendor == CPU_INTEL)
         {
@@ -60,35 +62,23 @@ int arch_temp_mc(void)
         return -1;
 }
 
-void arch_init(void)
+char *cpu_get_vendor(void)
 {
-        cli();
+        char *names[] = {"Intel", "Advanced Micro Devices", "Unknown Vendor"};
+        return names[cpu_get_raw_vendor()];
+}
+
+char *cpu_get_arch(void)
+{
+        return "x86";
+}
+
+void cpu_init(void)
+{
+        vfs_create("/dev", "cpu", VFS_DIRECTORY);
         PDEInit();
         FeaturesInit();
         gdt_init();
         idt_init();
-        pit_init(250);
-        cli();
-}
-
-char *arch_identify(void)
-{
-        static char *Architecture = " [Info] ISA: Intel Architecture / 32,x86, CPU: i386\n";
-        return Architecture;
-}
-
-void pause(void)
-{
-        __asm volatile("pause");
-        __asm volatile("hlt");
-}
-
-void cli(void)
-{
-        __asm volatile("cli");
-}
-
-void sti(void)
-{
-        __asm volatile("sti");
+        timer_init(250);
 }

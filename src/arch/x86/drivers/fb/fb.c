@@ -130,12 +130,7 @@ void fb_init(int magic, uintptr_t addr)
                         uint8_t bpp     = _fb->framebuffer_bpp;
                         uint32_t pitch  = _fb->framebuffer_pitch;
 
-                        vnode_t *dev;
-                        if (vfs_lookup("/dev", &dev) < 0)
-                                panic(PANIC_TODO);
-                        vnode_t *fb_vn = kmalloc(sizeof(vnode_t));
-                        memset(fb_vn, 0, sizeof(vnode_t));
-                        fb_vn->name = "fb";
+                        vnode_t *fb_vn = vfs_create("/dev", "fb", 0);
                         fb_vn->ops = &fb_ops;
                         fb_vn->private = kmalloc(sizeof(fb_t));
                         if (!fb_vn->private)
@@ -146,18 +141,10 @@ void fb_init(int magic, uintptr_t addr)
                         fb->h = height;
                         fb->bpp = bpp;
                         fb->p = pitch;
-                        vfs_append_child(dev, fb_vn);
                         
-                        vnode_t *info_vn = kmalloc(sizeof(vnode_t));
-                        memset(info_vn, 0, sizeof(vnode_t));
-                        info_vn->name = "fb-info";
+                        vnode_t *info_vn = vfs_create("/dev", "fb-info", 0);
                         info_vn->ops = &fb_info_ops;
-                        info_vn->private = kmalloc(sizeof(fb_t));
-                        if (!info_vn->private)
-                                panic(PANIC_TODO);
-                        memcpy(info_vn->private, fb, sizeof(fb_t));
-                        vfs_append_child(dev, info_vn);
-                        
+                        info_vn->private = fb;
                         kprint(" [krnl] Framebuffer initialized: %dx%d@%d bpp, base=0x%x\r\n",
                                width, height, bpp, base);
                         break;

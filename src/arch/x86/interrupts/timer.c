@@ -1,6 +1,6 @@
-#include <interrupts/pit.h>
+#include <interrupts/timer.h>
 #include <cpu/io.h>
-#include <arch.h>
+#include <cpu/cpu.h>
 #include <drivers/kprint.h>
 #include <panic.h>
 
@@ -23,9 +23,9 @@ void kdelay(unsigned long ticks)
         if (ticks == 0)
                 return;
         uint32_t flags = save_flags();
-        cli();
+        cpu_di();
         unsigned long start = ticks_since_boot;
-        sti();
+        cpu_ei();
         while ((ticks_since_boot - start) < ticks)
         {
                 __asm volatile("hlt");
@@ -34,7 +34,7 @@ void kdelay(unsigned long ticks)
         restore_flags(flags);
 }
 
-void pit_init(unsigned int targetFreq)
+void timer_init(unsigned int targetFreq)
 {
         if (targetFreq == 0)
         {

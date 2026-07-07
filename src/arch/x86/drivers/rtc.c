@@ -1,6 +1,9 @@
 #include <drivers/rtc.h>
 #include <fs/fs.h>
 #include <mm/alloc.h>
+#include <panic.h>
+#include <math.h>
+#include <string.h>
 
 static uint8_t bcd2Bin(uint8_t bcd)
 {
@@ -25,13 +28,22 @@ rtcTime_t rtcGetTime(void)
         return time;
 }
 
+static int read(file_t *file, void *buf, size_t i)
+{
+        int a = min(i, sizeof(rtcTime_t));
+        not_optional(file);
+        not_optional(buf);
+        rtcTime_t time = rtcGetTime();
+        memcpy(buf, &time, a);
+        return a;
+}
+
+static file_ops_t fil = {
+        .read = read,
+};
+
 void rtcInit(void)
 {
-        vnode_t *ndev = kmalloc(sizeof(vnode_t));
-        vnode_t *vdev = NULL;
-        vfs_lookup("dev", &vdev);
-        ndev->name = "rtc";
-        ndev->ops = NULL;
-        ndev->flags = 0;
-        vfs_append_child(vdev, ndev);
+        vnode_t *node = vfs_create("/dev", "rtc", 0);
+        node->ops = &fil;
 }

@@ -27,7 +27,7 @@ override ARCH_LINKER_SCRIPT := $(SRC)/$(ARCH)/linker.ld
 override ARCH_OUTPUT_SUFFIX :=
 override ARCH_RUN_SCRIPT :=
 
-include $(SRC)/arch/$(ARCH)/arch.mk
+include $(SRC)/arch/$(ARCH)/flags.mk
 
 override KCFLAGS += \
     -c \
@@ -77,7 +77,7 @@ obj/%.s.o: $(SRC)/%.s
 	mkdir -p "$$(dirname $@)"
 	$(KAS) $(ASFLAGS) -c $< -o $@
 
-include $(SRC)/arch/$(ARCH)/post.mk
+include $(SRC)/arch/$(ARCH)/addendum.mk
 
 .PHONY: clean
 clean:

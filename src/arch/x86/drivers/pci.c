@@ -3,6 +3,8 @@
 #include <fs/fs.h>
 #include <string.h>
 #include <mm/alloc.h>
+#include <panic.h>
+#include <math.h>
 
 pci_device_t devices[MAX_DEVICES];
 uint32_t device_count = 0;
@@ -410,41 +412,50 @@ void pciDisplayDeviceInfo(pci_device_t *dev)
 {
         const char *className = pciClassToString(dev->class_id, dev->subclass_id);
 
-        kprint("PCI Device @ Bus %d, Slot %d, Function %d\r\n", dev->bus, dev->slot, dev->function);
-        kprint("  Vendor ID: 0x%x\r\n", dev->vendor_id);
-        kprint("  Device ID: 0x%x\r\n", dev->device_id);
-        kprint("  Class: 0x%x (%s)\r\n", dev->class_id, className);
-        kprint("  Subclass: 0x%x\r\n", dev->subclass_id);
-        kprint("  Programming Interface: 0x%x\r\n", dev->prog_if);
-        kprint("  Revision: 0x%x\r\n", dev->revision);
-        kprint("  Header Type: 0x%x\r\n", dev->header_type);
-        kprint("  IRQ Line: %d\r\n", dev->irq_line);
+        kprint(" [krnl] PCI Device @ Bus %d, Slot %d, Function %d\r\n", dev->bus, dev->slot, dev->function);
+        kprint(" [krnl]   Vendor ID: 0x%x\r\n", dev->vendor_id);
+        kprint(" [krnl]   Device ID: 0x%x\r\n", dev->device_id);
+        kprint(" [krnl]   Class: 0x%x (%s)\r\n", dev->class_id, className);
+        kprint(" [krnl]   Subclass: 0x%x\r\n", dev->subclass_id);
+        kprint(" [krnl]   Programming Interface: 0x%x\r\n", dev->prog_if);
+        kprint(" [krnl]   Revision: 0x%x\r\n", dev->revision);
+        kprint(" [krnl]   Header Type: 0x%x\r\n", dev->header_type);
+        kprint(" [krnl]   IRQ Line: %d\r\n", dev->irq_line);
 
         for (int i = 0; i < 6; i++)
         {
                 if (dev->bar[i])
-                        kprint("  BAR[%d]: 0x%x\r\n", i, dev->bar[i]);
+                        kprint(" [krnl] BAR[%d]: 0x%x\r\n", i, dev->bar[i]);
         }
 }
 
+static int read(file_t *file, void *buf, size_t i)
+{
+        int a = min(i, sizeof(pci_device_t));
+        not_optional(file);
+        not_optional(buf);
+        memcpy(buf, ((pci_device_t *)file->vnode->private), a);
+        return a;
+}
+
+static file_ops_t fil = {
+        .read = read,
+};
+
 void pciRegister(pci_device_t *dev)
 {
+        pciDisplayDeviceInfo(dev);
         const char *className = pciClassToString(dev->class_id, dev->subclass_id);
         devices[device_count++] = *dev;
         kprint(" [krnl] Registered Device of class %s on irq %d\r\n", className, dev->irq_line);
-        // create file
-        vnode_t *vdev = NULL;
-        const char *or = pciClassToFileName(dev->class_id, dev->subclass_id);
-        char *clone = kmalloc(strnlen(or, 256) + 1);
-        memcpy(clone, or, strnlen(or, 256) + 1);
-        vfs_lookup("dev", &vdev);
 
-        vnode_t *ndev = kmalloc(sizeof(vnode_t));
-        memset(ndev, 0, sizeof(vnode_t));
-        ndev->name = clone;
-        ndev->ops = NULL;
-        ndev->flags = VFS_DIRECTORY;
-        vfs_append_child(vdev, ndev);
+        vnode_t *node = vfs_create("/dev/pci",
+                                (char *)
+                                pciClassToFileName(dev->class_id,
+                                                   dev->subclass_id),
+                                VFS_DIRECTORY);
+        node->ops = &fil;
+        node->private = dev;
 }
 
 pci_device_t *pciFindOfType(uint8_t class_id, uint8_t subclass_id)

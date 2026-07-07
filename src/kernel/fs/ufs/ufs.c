@@ -33,12 +33,8 @@ static void ufs_add_files(file_t *fil, uint16_t LBA);
 
 static void ufs_add_file(vnode_t *root, ufs_file_t *fil)
 {
-        vnode_t *v = kmalloc(sizeof(vnode_t));
-        memset(v, 0, sizeof(vnode_t));
-        v->name = kmalloc(8);
-        memcpy(v->name, fil->name, 7);
+        vnode_t *v = vfs_create_in(root, fil->name, 0);
         v->ops = &ufs_file_ops;
-        vfs_append_child(root, v);
 }
 
 static void ufs_add_files(file_t *fil, uint16_t LBA)

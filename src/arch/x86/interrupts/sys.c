@@ -1,6 +1,6 @@
 
 #include <interrupts/sys.h>
-#include <arch.h>
+#include <cpu/cpu.h>
 #include <sched/core.h>
 
 void sys_handler(void)
@@ -10,7 +10,7 @@ void sys_handler(void)
         {
                 case SYS_EXIT:
                         ((task_t *)current_process_fil->private)->active = false;
-                        sti();
+                        cpu_ei();
                         while(1);
                         break;
                 default:
@@ -22,8 +22,8 @@ void sys_handler(void)
 
 void sys_yield(void)
 {
-        sti();
-        pause();
+        cpu_ei();
+        cpu_pause();
 }
 
 void exit(int code)

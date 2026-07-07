@@ -3,7 +3,7 @@
 
 #include <drivers/pci.h>
 #include <drivers/kprint.h>
-#include <interrupts/pit.h>
+#include <interrupts/timer.h>
 #include <cpu/io.h>
 
 #define ATA_SR_BSY 0x80  // Busy

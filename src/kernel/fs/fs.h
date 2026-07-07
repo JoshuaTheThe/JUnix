@@ -68,6 +68,8 @@ long vfs_lseek(file_t *f, long offset, int whence);
 void vfs_append_child(vnode_t *f, vnode_t *x);
 vnode_t *vfs_mkdir(vnode_t *p, char *name, uint32_t flags);
 int vfs_readdir(file_t *f, void *buf, size_t count);
+vnode_t *vfs_create(char *parent_path, char *name, int flags);
+vnode_t *vfs_create_in(vnode_t *parent, char *name, int flags);
 
 extern vnode_t *root_vnode;
 

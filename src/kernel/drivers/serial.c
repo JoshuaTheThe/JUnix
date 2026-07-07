@@ -1,7 +1,7 @@
 
 #include <drivers/serial.h>
 #include <cpu/io.h>
-#include <arch.h>
+#include <cpu/cpu.h>
 #include <stdint.h>
 #include <fs/fs.h>
 #include <mm/alloc.h>
@@ -21,7 +21,7 @@ static bool serial_can_read(void)
 static void serial_wait_for_input(void)
 {
         while (!serial_can_read())
-                pause();
+                cpu_pause();
 }
 
 void serial_putchar(char c)
@@ -69,13 +69,8 @@ static file_ops_t serial_ops =
 
 void serial_register_device(void)
 {
-        vnode_t *dev_dir;
-        vfs_lookup("/dev", &dev_dir);
-        vnode_t *serial = kmalloc(sizeof(vnode_t));
-        memset(serial, 0, sizeof(vnode_t));
-        serial->name = "serial";
+        vnode_t *serial = vfs_create("/dev", "serial", 0);
         serial->ops = &serial_ops;
-        vfs_append_child(dev_dir, serial);
 }
 
 void serial_init(void)

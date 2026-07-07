@@ -29,12 +29,8 @@ static file_ops_t ops = {
 vnode_t *CreateNullDevice(char *name)
 {
         not_optional(name);
-        vnode_t *dir = kmalloc(sizeof(vnode_t)), *dev;
-        memset(dir, 0, sizeof(vnode_t));
-        dir->name = name;
+        vnode_t *dir = vfs_create("/dev", name, 0);
         dir->ops  = &ops;
-        vfs_lookup("dev", &dev);
-        vfs_append_child(dev, dir);
         return dir;
 }
 

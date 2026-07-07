@@ -8,6 +8,6 @@
 #define PIT_STATUS 0x61
 
 void kdelay(unsigned long ticks);
-void pit_init(unsigned int targetFreq);
+void timer_init(unsigned int targetFreq);
 
 #endif

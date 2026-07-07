@@ -1,6 +1,6 @@
 #include <cpu/idt.h>
 #include <interrupts/sys.h>
-#include <arch.h>
+#include <cpu/cpu.h>
 
 static idt_entry_t idt[256];
 static idtp_t idtp;
@@ -16,7 +16,6 @@ void idt_set(uint8_t n, void *handler, idt_entry_t idtEntries[static 256])
 
 void idt_init(void)
 {
-        cli();
         for (uint64_t i = 0; i < IDT_ENTRIES; ++i)
         {
                 idt_set((uint8_t)i, (void *)default_int, idt);

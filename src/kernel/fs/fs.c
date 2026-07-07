@@ -29,21 +29,8 @@ int vfs_init(void)
 
 int vfs_init_dev_mnt(void)
 { 
-        // Create /dev directory
-        vnode_t *dev = kmalloc(sizeof(vnode_t));
-        memset(dev, 0, sizeof(vnode_t));
-        dev->name = "dev";
-        dev->parent = root_vnode;
-        dev->ops = &dir_ops;
-        vfs_append_child(root_vnode, dev);
-
-        // Create /mnt directory
-        vnode_t *mnt = kmalloc(sizeof(vnode_t));
-        memset(mnt, 0, sizeof(vnode_t));
-        mnt->name = "mnt";
-        mnt->parent = root_vnode;
-        mnt->ops = &dir_ops;
-        vfs_append_child(root_vnode, mnt);
+        vfs_create("/", "dev", VFS_DIRECTORY)->ops = &dir_ops;
+        vfs_create("/", "mnt", VFS_DIRECTORY)->ops = &dir_ops;
         return 0;
 }
 
@@ -231,4 +218,28 @@ vnode_t *vfs_mkdir(vnode_t *p, char *name, uint32_t flags)
         if (p->ops && p->ops->mkdir)
                 return p->ops->mkdir(p, name, flags);
         panic(PANIC_UNSUPPORTED_FS_OP);
+}
+
+vnode_t *vfs_create(char *parent_path, char *name, int flags)
+{
+        vnode_t *p;
+        if (vfs_lookup(parent_path, &p) < 0)
+        {
+                kprint(" [krnl] could not find file: %s\r\n", parent_path);
+                panic(PANIC_TODO);
+        }
+
+        return vfs_create_in(p, name, flags);
+}
+
+vnode_t *vfs_create_in(vnode_t *parent, char *name, int flags)
+{
+        not_optional(parent);
+        not_optional(name);
+        vnode_t *n = kmalloc(sizeof(vnode_t));
+        n->name  = name;
+        n->ops   = NULL;
+        n->flags = flags;
+        vfs_append_child(parent, n);
+        return n;
 }

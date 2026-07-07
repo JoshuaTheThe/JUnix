@@ -149,10 +149,7 @@ filesystem_t ramfs_create_fs(void)
 
 vnode_t *ramfs_mkdir(vnode_t *p, char *name, uint32_t flags)
 {
-        vnode_t *dir = kmalloc(sizeof(vnode_t));
-        memset(dir, 0, sizeof(vnode_t));
-        dir->name = name;
+        vnode_t *dir = vfs_create_in(p, name, flags);
         dir->ops = (flags & VFS_DIRECTORY) ? &ramfs_dir_ops : &ramfs_file_ops;
-        vfs_append_child(p, dir);
         return dir;
 }

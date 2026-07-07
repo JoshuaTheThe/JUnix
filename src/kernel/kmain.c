@@ -7,7 +7,7 @@
 #include <fs/ramfs/ramfs.h>
 #include <mm/bitmap.h>
 #include <mm/alloc.h>
-#include <arch.h>
+#include <cpu/cpu.h>
 #include <string.h>
 #include <panic.h>
 #include <drivers/fb/fb.h>
@@ -54,7 +54,7 @@ pid_t create(void)
 void kmain(void)
 {
         pid_t pid = create();
-        sti();
+        cpu_ei();
         while (process_exists(pid))
                 sys_yield();
         sys_yield();

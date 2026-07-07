@@ -1,6 +1,6 @@
 
 #include <drivers/storage/ide.h>
-#include <arch.h>
+#include <cpu/cpu.h>
 #include <fs/fs.h>
 #include <mm/alloc.h>
 #include <drivers/pci.h>
@@ -322,14 +322,11 @@ void IDEInitialise(void)
                         char *clone = kmalloc(size + 64);
                         memcpy(clone, or, size);
                         itoa(&clone[size], count, 10, 0);
-                        vnode_t *ndev = kmalloc(sizeof(vnode_t));
-                        memset(ndev, 0, sizeof(vnode_t));
-                        ndev->name = clone;
+
+                        vnode_t *ndev = vfs_create("/dev", clone, VFS_DIRECTORY);
                         ndev->ops = &file_ops;
-                        ndev->flags = VFS_DIRECTORY;
                         ndev->private = kmalloc(sizeof(int));
                         *((int *)ndev->private) = IDEState.IDEDev[count].Drive;
-                        vfs_append_child(vdev, ndev);
                         count++;
                 }
         for (int i = 0; i < 4; i++)
@@ -470,7 +467,7 @@ unsigned char IDEAccess(unsigned char direction, unsigned char drive, unsigned i
 unsigned char IDEAtaPIRead(unsigned char drive, unsigned int lba, unsigned char numsects,
                            unsigned short selector, unsigned int edi)
 {
-        sti();
+        cpu_ei();
         unsigned int channel = IDEState.IDEDev[drive].Channel;
         unsigned int slavebit = IDEState.IDEDev[drive].Drive;
         unsigned int bus = IDEState.Channels[channel].base;
@@ -562,7 +559,7 @@ void IDEWriteSectors(unsigned char drive, unsigned char numsects, unsigned int l
 
 void IDEFind(size_t Index)
 {
-        cli();
+        cpu_di();
         IDEState.Dev = pciGetOriginalDevice(Index);
         if (!IDEState.Dev || IDEState.Dev->class_id != 0x01 || IDEState.Dev->subclass_id != 0x01)
         {
