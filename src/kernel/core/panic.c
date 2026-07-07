@@ -22,9 +22,7 @@ _Noreturn void panic_impl(const char *const File, long Line, panic_code_t Code, 
         kprint("\r\n -- KERNEL PANIC VIA %s IN PROCESS %d -- \r\n",
                     Class == PANIC_CLASS_SUPERVISOR ? "SUPERVISOR" : "USERSPACE", 0);
         kprint("Kernel Panic Function %x (%s) was raised\r\n", Code, CodeAsStr);
-        #ifdef HAS_TEMPERATURE
-        kprint("Temperature x1000: %d\r\n", ArchGetTemperatureMC());
-        #endif
+        kprint("Temperature x1000: %d\r\n", cpu_get_temp_mc());
         if (File)
                 kprint("Source Location: %s:%d\r\n", File, Line);
         list(root_vnode, 0);

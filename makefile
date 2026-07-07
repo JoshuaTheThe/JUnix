@@ -5,9 +5,11 @@ ARCH := x86
 override BIN := bin
 override SRC := src
 override KERNEL := $(SRC)/kernel
+override LIBK := $(SRC)/libk
 override OUTPUT := junix
 
 override CFILES := $(shell find $(KERNEL)/ -type f -name '*.c' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
+override CFILES += $(shell find $(LIBK)/ -type f -name '*.c' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 override CFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.c' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 override ASFILES := $(shell find $(KERNEL)/ -type f -name '*.s' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 override ASFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.s' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
@@ -67,7 +69,7 @@ bin/$(OUTPUT): $(OBJ)
 
 obj/%.c.o: $(SRC)/%.c
 	mkdir -p "$$(dirname $@)"
-	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@ -I $(KERNEL) -I $(SRC)/arch/$(ARCH)
+	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@ -I $(KERNEL) -I $(SRC)/arch/$(ARCH) -I $(LIBK)
 
 obj/%.s.o: $(SRC)/%.s
 	mkdir -p "$$(dirname $@)"

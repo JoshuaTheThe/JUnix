@@ -11,6 +11,40 @@ uint32_t ticks_since_boot = 0;
 
 vnode_t *proc = NULL, *current_process_fil = NULL, *override_next = NULL;
 
+int task_open(task_t *task, char *path, int flags, int mode)
+{
+        (void)flags;
+        (void)mode;
+        int fd;
+        for (fd=0;!task->fd.items[fd]&&(size_t)fd<task->fd.capacity;++fd)
+                ;
+        if ((size_t)fd==task->fd.capacity||!task->fd.items)
+        {
+                void *new = kmalloc(task->fd.capacity + 8 * sizeof(file_t *));
+                if (task->fd.capacity > 0)
+                {
+                        memcpy(new, task->fd.items, task->fd.capacity * sizeof(file_t *));
+                        kfree(task->fd.items);
+                }
+                task->fd.capacity += 8;
+                task->fd.items = new;
+                return task->fd.capacity - 8;
+        }
+
+        if (vfs_open(path, &task->fd.items[fd]) < 0)
+                return -1;
+        return fd;
+}
+
+void task_close(task_t *task, int fd)
+{
+        if ((size_t)fd >= task->fd.capacity)
+                panic(PANIC_TODO);
+        file_t *file = task->fd.items[fd];
+        task->fd.items[fd] = NULL;
+        vfs_close(file);
+}
+
 vnode_t *scheduler_mkdir(vnode_t *p, char *name, uint32_t flags)
 {
         vnode_t *new = kmalloc(sizeof(*new));
