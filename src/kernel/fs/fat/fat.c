@@ -202,6 +202,21 @@ static uint32_t allocate_cluster(fat_bpb_t *bt, file_t *file)
         return free;
 }
 
+static fat_dir_t fetch_directory(fat_bpb_t *bt, uint32_t cluster, file_t *file, size_t entry)
+{
+        const uint32_t first = first_sector_for_cluster(bt, cluster);
+        const size_t   entries = bt->sector_size / sizeof(fat_dir_t);
+        const size_t   sec     = entry / entries; 
+        const size_t   index   = entry % entries;
+        char sector[bt->sector_size];
+
+        vfs_lseek(file, bt->sector_size * (first+sec), SEEK_SET);
+        vfs_read(file, sector, sizeof(sector));
+        fat_dir_t *dir = (fat_dir_t *)sector;
+
+        return dir[index];
+}
+
 static int iterate_directory(fat_bpb_t *bt, uint32_t dir, file_t *file, int (*callback)(uint32_t,fat_dir_t *,size_t))
 {
         uint32_t cluster = dir;
@@ -213,7 +228,7 @@ static int iterate_directory(fat_bpb_t *bt, uint32_t dir, file_t *file, int (*ca
 
                 for (uint32_t s = 0; s < bt->cluster_size; s++)
                 {
-                        file->offset = bt->sector_size * (first + s);
+                        vfs_lseek(file, bt->sector_size * (first+s), SEEK_SET);
                         vfs_read(file, sector, sizeof(sector));
                         fat_dir_t *dir = (fat_dir_t *)sector;
 
@@ -246,6 +261,7 @@ static int iterate_directory(fat_bpb_t *bt, uint32_t dir, file_t *file, int (*ca
 static uint32_t dir_cluster = 0;
 static vnode_t *current_parent = NULL;
 static struct private *_priv = NULL;
+static file_t *fs = NULL;
 
 static char tolower(char x)
 {
@@ -276,6 +292,20 @@ static bool is_dotdot_entry(fat_dir_t *dir)
            dir->name[7] == ' ';
 }
 
+static int read(file_t *file, void *buf, size_t n)
+{
+        fat_file_location_t *location = file->vnode->private;
+        fat_dir_t dir = fetch_directory(&((struct private *)location->_priv)->bpb,
+                                        location->cluster,
+                                        ((struct private *)location->_priv)->base,
+                                        location->index);
+        return 0;
+}
+
+static file_ops_t ops = {
+        .read = read,
+};
+
 static int add_file(uint32_t clus, fat_dir_t *dir, size_t index)
 {
         if (is_dot_entry(dir) || is_dotdot_entry(dir))
@@ -298,8 +328,9 @@ static int add_file(uint32_t clus, fat_dir_t *dir, size_t index)
 
         vnode_t *save = current_parent;
         vnode_t *node = vfs_create_in(current_parent, name, 0);
-        node->ops = NULL;
+        node->ops = &ops;
         node->private = kmalloc(sizeof(fat_file_location_t));
+        ((fat_file_location_t *)node->private)->_priv   = _priv;
         ((fat_file_location_t *)node->private)->cluster = clus;
         ((fat_file_location_t *)node->private)->index   = index;
         int res = 0;

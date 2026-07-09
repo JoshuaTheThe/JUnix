@@ -6,7 +6,7 @@ if grub-file --is-x86-multiboot2 bin/junix_x86.o; then
     echo "the file is multiboot"
     mkdir -p bin/isodir/boot/grub
     mkdir mnt
-    cp bin/junix_x86.o bin/isodir/boot
+    cp bin/*.o bin/isodir/
     cp src/arch/x86/grub.cfg bin/isodir/boot/grub/grub.cfg
     
     # Create HDD image instead of ISO
@@ -30,9 +30,8 @@ if grub-file --is-x86-multiboot2 bin/junix_x86.o; then
     # Install GRUB to HDD
     sudo grub-install --target=i386-pc --root-directory=mnt --boot-directory=mnt/boot ${LOOP}
     
-    sudo mkdir -p mnt/boot/grub
-    sudo cp bin/junix_x86.o mnt/boot/
-    sudo cp src/arch/x86/grub.cfg mnt/boot/grub/
+    sudo cp -r bin/isodir/* mnt/
+    sudo cp -r src/misc/* mnt/
     
     # Cleanup
     sudo umount mnt

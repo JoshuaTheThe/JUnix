@@ -133,6 +133,7 @@ typedef struct
 {
         uint32_t  cluster;
         uint32_t  index;
+        void *   _priv;
 } fat_file_location_t;
 
 filesystem_t fat_create_fs(void);
