@@ -135,10 +135,11 @@ vnode_t *scheduler_add_process(task_state_registers_t initial_regs, char *name)
         task->regs = initial_regs;
         task->pid  = new_pid++;
         task->active = true;
-        
+
         vnode_t *vn = vfs_mkdir(proc, name, VFS_DIRECTORY);
         not_optional(vn);
         vn->private = task;
+        kprint(" [krnl] created process %s (%d)\r\n", vn->name, task->pid);
         return vn;
 }
 

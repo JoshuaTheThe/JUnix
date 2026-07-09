@@ -469,7 +469,6 @@ unsigned char IDEAccess(unsigned char direction, unsigned char drive, unsigned i
 unsigned char IDEAtaPIRead(unsigned char drive, unsigned int lba, unsigned char numsects,
                            unsigned short selector, unsigned int edi)
 {
-        cpu_ei();
         unsigned int channel = IDEState.IDEDev[drive].Channel;
         unsigned int slavebit = IDEState.IDEDev[drive].Drive;
         unsigned int bus = IDEState.Channels[channel].base;
@@ -504,7 +503,11 @@ unsigned char IDEAtaPIRead(unsigned char drive, unsigned int lba, unsigned char 
         __asm volatile("rep   outsw" : : "c"(6), "d"(bus), "S"(atapi_packet)); // Send Packet Data
         for (i = 0; i < numsects; i++)
         {
+                disable_timer();
+                cpu_ei();
                 IDEWaitIRQ(); // Wait for an IRQ.
+                cpu_di();
+                enable_timer();
                 if ((err = IDEPolling(channel, 1)))
                         return err; // Polling and return if error.
                 __asm volatile("pushw %es");

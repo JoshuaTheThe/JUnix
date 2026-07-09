@@ -9,16 +9,18 @@ static int read(file_t *f, void *buf, size_t count)
 {
         size_t off = ((partition_t *)(f->vnode)->private)->offset + f->offset;
         vfs_lseek(((partition_t *)(f->vnode)->private)->reference, off, SEEK_SET);
-        vfs_read(((partition_t *)(f->vnode)->private)->reference, buf, count);
+        int r = vfs_read(((partition_t *)(f->vnode)->private)->reference, buf, count);
         f->offset += count;
+        return r;
 }
 
 static int write(file_t *f, const void *buf, size_t count)
 {
         size_t off = ((partition_t *)(f->vnode)->private)->offset + f->offset;
         vfs_lseek(((partition_t *)(f->vnode)->private)->reference, off, SEEK_SET);
-        vfs_write(((partition_t *)(f->vnode)->private)->reference, buf, count);
+        int r = vfs_write(((partition_t *)(f->vnode)->private)->reference, buf, count);
         f->offset += count;
+        return r;
 }
 
 static file_ops_t ops = {

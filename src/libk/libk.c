@@ -1,6 +1,96 @@
 
 #include <libk.h>
 
+uintptr_t syscall0(uint32_t nr)
+{
+        uintptr_t ret;
+
+        __asm__ volatile (
+                "int $0x80"
+                : "=a"(ret)
+                : "a"(nr)
+                : "memory"
+        );
+
+        return ret;
+}
+
+uintptr_t syscall1(uint32_t nr, uintptr_t a)
+{
+        uintptr_t ret;
+
+        __asm__ volatile (
+                "int $0x80"
+                : "=a"(ret)
+                : "a"(nr), "b"(a)
+                : "memory"
+        );
+
+        return ret;
+}
+
+uintptr_t syscall2(uint32_t nr, uintptr_t a, uintptr_t b)
+{
+        uintptr_t ret;
+
+        __asm__ volatile (
+                "int $0x80"
+                : "=a"(ret)
+                : "a"(nr), "b"(a), "c"(b)
+                : "memory"
+        );
+
+        return ret;
+}
+
+uintptr_t syscall3(uint32_t nr, uintptr_t a, uintptr_t b, uintptr_t c)
+{
+        uintptr_t ret;
+        __asm__ volatile (
+                "int $0x80"
+                : "=a"(ret)
+                : "a"(nr), "b"(a), "c"(b), "d"(c)
+                : "memory"
+        );
+
+        return ret;
+}
+
+uintptr_t syscall4(uint32_t nr,
+                   uintptr_t a,
+                   uintptr_t b,
+                   uintptr_t c,
+                   uintptr_t d)
+{
+        uintptr_t ret;
+        __asm__ volatile (
+                "int $0x80"
+                : "=a"(ret)
+                : "a"(nr), "b"(a), "c"(b), "d"(c), "S"(d)
+                : "memory"
+        );
+
+        return ret;
+}
+
+uintptr_t syscall5(uint32_t nr,
+                   uintptr_t a,
+                   uintptr_t b,
+                   uintptr_t c,
+                   uintptr_t d,
+                   uintptr_t e)
+{
+        uintptr_t ret;
+        __asm__ volatile (
+                "int $0x80"
+                : "=a"(ret)
+                : "a"(nr), "b"(a), "c"(b), "d"(c), "S"(d), "D"(e)
+                : "memory"
+        );
+
+        return ret;
+}
+
 void exit(int code)
 {
         __asm volatile (

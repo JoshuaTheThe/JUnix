@@ -70,3 +70,17 @@ void timer_init(unsigned int targetFreq)
         outb(PIT_CHANNEL0, divisor & 0xFF);
         outb(PIT_CHANNEL0, (divisor >> 8) & 0xFF);
 }
+
+void disable_timer(void)
+{
+        uint8_t mask = inb(PIC1_DATA);
+        mask |= (1 << IRQ_TIMER);
+        outb(PIC1_DATA, mask);
+}
+
+void enable_timer(void)
+{
+        uint8_t mask = inb(PIC1_DATA);
+        mask &= ~(1 << IRQ_TIMER);
+        outb(PIC1_DATA, mask);
+}

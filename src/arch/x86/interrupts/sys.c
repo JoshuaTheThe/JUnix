@@ -4,6 +4,7 @@
 #include <sched/core.h>
 #include <string.h>
 #include <mm/alloc.h>
+#include <drivers/kprint.h>
 
 void sys_handler(void)
 {
@@ -46,7 +47,7 @@ void sys_handler(void)
                         file_t *file = ((task_t *)current_process_fil->private)->fd.items[regs->ebx];
                         void   *buf  = (void*)regs->ecx;
                         int     cnt  = regs->edx;
-                        vfs_read(file, buf, cnt);
+                        regs->eax = vfs_read(file, buf, cnt);
                         break;
                 }
 
@@ -55,7 +56,13 @@ void sys_handler(void)
                         file_t *file = ((task_t *)current_process_fil->private)->fd.items[regs->ebx];
                         void   *buf  = (void*)regs->ecx;
                         int     cnt  = regs->edx;
-                        vfs_write(file, buf, cnt);
+                        regs->eax = vfs_write(file, buf, cnt);
+                        break;
+                }
+
+                case SYS_DBGWRITE:
+                {
+                        kprint("%x: %s", regs->ebx, (char *)regs->ebx);
                         break;
                 }
 
@@ -70,94 +77,4 @@ void sys_yield(void)
 {
         cpu_ei();
         cpu_pause();
-}
-
-uintptr_t syscall0(uint32_t nr)
-{
-        uintptr_t ret;
-
-        __asm__ volatile (
-                "int $0x80"
-                : "=a"(ret)
-                : "a"(nr)
-                : "memory"
-        );
-
-        return ret;
-}
-
-uintptr_t syscall1(uint32_t nr, uintptr_t a)
-{
-        uintptr_t ret;
-
-        __asm__ volatile (
-                "int $0x80"
-                : "=a"(ret)
-                : "a"(nr), "b"(a)
-                : "memory"
-        );
-
-        return ret;
-}
-
-uintptr_t syscall2(uint32_t nr, uintptr_t a, uintptr_t b)
-{
-        uintptr_t ret;
-
-        __asm__ volatile (
-                "int $0x80"
-                : "=a"(ret)
-                : "a"(nr), "b"(a), "c"(b)
-                : "memory"
-        );
-
-        return ret;
-}
-
-uintptr_t syscall3(uint32_t nr, uintptr_t a, uintptr_t b, uintptr_t c)
-{
-        uintptr_t ret;
-        __asm__ volatile (
-                "int $0x80"
-                : "=a"(ret)
-                : "a"(nr), "b"(a), "c"(b), "d"(c)
-                : "memory"
-        );
-
-        return ret;
-}
-
-uintptr_t syscall4(uint32_t nr,
-                   uintptr_t a,
-                   uintptr_t b,
-                   uintptr_t c,
-                   uintptr_t d)
-{
-        uintptr_t ret;
-        __asm__ volatile (
-                "int $0x80"
-                : "=a"(ret)
-                : "a"(nr), "b"(a), "c"(b), "d"(c), "S"(d)
-                : "memory"
-        );
-
-        return ret;
-}
-
-uintptr_t syscall5(uint32_t nr,
-                   uintptr_t a,
-                   uintptr_t b,
-                   uintptr_t c,
-                   uintptr_t d,
-                   uintptr_t e)
-{
-        uintptr_t ret;
-        __asm__ volatile (
-                "int $0x80"
-                : "=a"(ret)
-                : "a"(nr), "b"(a), "c"(b), "d"(c), "S"(d), "D"(e)
-                : "memory"
-        );
-
-        return ret;
 }

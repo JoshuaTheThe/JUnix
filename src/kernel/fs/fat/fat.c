@@ -3,6 +3,7 @@
 #include <fs/fs.h>
 #include <drivers/kprint.h>
 #include <mm/alloc.h>
+#include <string.h>
 
 struct private
 {
@@ -258,10 +259,73 @@ static int iterate_directory(fat_bpb_t *bt, uint32_t dir, file_t *file, int (*ca
         return 0;
 }
 
+static int read(file_t *file, void *buf, size_t n)
+{
+        fat_file_location_t *location = file->vnode->private;
+        struct private *priv = location->_priv;
+        fat_dir_t dir = fetch_directory(&priv->bpb,
+                                    location->cluster,
+                                    priv->base,
+                                    location->index);
+        uint32_t first_cluster =
+        ((uint32_t)dir.entry_first_cluster_high << 16) |
+         dir.entry_first_cluster_low;
+        if (file->offset >= dir.size)
+                return 0;
+        if (file->offset + n > dir.size)
+        n = dir.size - file->offset;
+        uint8_t *out = buf;
+        uint32_t cluster = first_cluster;
+        uint32_t cluster_bytes =
+        priv->bpb.sector_size * priv->bpb.cluster_size;
+        uint32_t skip = file->offset / cluster_bytes;
+        for (uint32_t i = 0; i < skip; i++)
+                cluster = next_cluster(&priv->bpb, cluster, priv->base);
+        uint32_t cluster_offset = file->offset % cluster_bytes;
+        while (n)
+        {
+                uint32_t first_sector =
+                        first_sector_for_cluster(&priv->bpb, cluster);
+                uint32_t sector =
+                        first_sector +
+                        (cluster_offset / priv->bpb.sector_size);
+
+                uint32_t offset =
+                        cluster_offset % priv->bpb.sector_size;
+                uint8_t sector_buf[priv->bpb.sector_size];
+                vfs_lseek(priv->base,
+                          sector * priv->bpb.sector_size,
+                          SEEK_SET);
+                vfs_read(priv->base,
+                         sector_buf,
+                         sizeof(sector_buf));
+                size_t copy = priv->bpb.sector_size - offset;
+                if (copy > n)
+                    copy = n;
+                memcpy(out, sector_buf + offset, copy);
+                out += copy;
+                n -= copy;
+                cluster_offset += copy;
+                if (cluster_offset >= cluster_bytes && n)
+                {
+                        cluster = next_cluster(&priv->bpb,
+                                               cluster,
+                                               priv->base);
+                        cluster_offset = 0;
+                }
+        }
+
+        size_t done = (uint8_t *)out - (uint8_t *)buf;
+        return done;
+}
+
+static file_ops_t ops = {
+        .read = read,
+};
+
 static uint32_t dir_cluster = 0;
 static vnode_t *current_parent = NULL;
 static struct private *_priv = NULL;
-static file_t *fs = NULL;
 
 static char tolower(char x)
 {
@@ -291,20 +355,6 @@ static bool is_dotdot_entry(fat_dir_t *dir)
            dir->name[6] == ' ' &&
            dir->name[7] == ' ';
 }
-
-static int read(file_t *file, void *buf, size_t n)
-{
-        fat_file_location_t *location = file->vnode->private;
-        fat_dir_t dir = fetch_directory(&((struct private *)location->_priv)->bpb,
-                                        location->cluster,
-                                        ((struct private *)location->_priv)->base,
-                                        location->index);
-        return 0;
-}
-
-static file_ops_t ops = {
-        .read = read,
-};
 
 static int add_file(uint32_t clus, fat_dir_t *dir, size_t index)
 {

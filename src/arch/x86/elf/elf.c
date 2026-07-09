@@ -2,6 +2,7 @@
 #include <drivers/kprint.h>
 #include <mm/alloc.h>
 #include <string.h>
+#include <cpu/cpu.h>
 
 static elf_extern_symbol_t *extern_symbols = NULL;
 static int extern_symbol_count = 0;
@@ -35,7 +36,7 @@ bool elfCheckSupported(elf32EHeader_t *hdr)
         /* NULL+Invalid Check */
         if (!elfCheckFile(hdr))
         {
-                // kprint("FILE IS NOT VALID\n");
+                kprint(" [krnl] file is not a valid elf executable\r\n");
                 return false;
         }
 
@@ -46,7 +47,7 @@ bool elfCheckSupported(elf32EHeader_t *hdr)
         const bool correct_text_fmt = (hdr->type == ET_REL || hdr->type == ET_EXEC);
         const bool is_supported = (correct_arch && correct_data_fmt &&
                                    correct_version && correct_text_fmt);
-        // kprint("IS SUPPORTED: %d\n", is_supported);
+        kprint(" [krnl] elf file is supported: %d\r\n", is_supported);
         return is_supported;
 } /* end of elfCheckSupported */
 
@@ -61,16 +62,16 @@ void *elfLoadRel(elf32EHeader_t *hdr)
         result = elfLoadStageOne(hdr);
         if (result == ELF_ERROR)
         {
-                // kprint("STAGE ONE FAILED\n");
+                kprint(" [krnl] stage one failed\r\n");
                 return (void *)-1;
         }
         result = elfLoadStageTwo(hdr);
         if (result == ELF_ERROR)
         {
-                // kprint("STAGE TWO FAILED\n");
+                kprint(" [krnl] stage two failed\r\n");
                 return (void *)-1;
         }
-        // kprint("HEADER ENTRY: %x\n", hdr->entry);
+        // kprint("HEADER ENTRY: %x\r\n", hdr->entry);
         return (void *)hdr->entry;
 } /* end of elfLoadRel */
 
@@ -209,7 +210,7 @@ int elfLoadStageOne(elf32EHeader_t *hdr)
                         void *mem = kmalloc(section->sh_size);
                         memset(mem, 0, section->sh_size);
                         section->sh_offset = (int)mem - (int)hdr;
-                        // kprint("DEBUG: Allocated memory for section (%x)\n", section->sh_size);
+                        kprint(" [krnl] Allocated memory for section (%x)\r\n", section->sh_size);
                 }
         }
 
@@ -231,7 +232,7 @@ int elfDoRelocation(elf32EHeader_t *hdr, elf32Rel_t *rel, elf32SectionHeader_t *
                 symbolValue = elfGetSymbolValue(hdr, reltab->sh_link, ELF32_R_SYM(rel->r_info));
                 if (symbolValue == ELF_ERROR)
                 {
-                        // kprint("SYMBOL DOES NOT EXIST\n");
+                        kprint("[krnl] symbol does not exist\r\n");
                         return ELF_ERROR;
                 }
         }
@@ -241,17 +242,17 @@ int elfDoRelocation(elf32EHeader_t *hdr, elf32Rel_t *rel, elf32SectionHeader_t *
                 break;
         case R_386_32:
                 /* Symbol + Offset */
-                // kprint("RELOCATING %x -> %x+%x (%x)\n", *ref, symbolValue, *ref, DO_386_32(symbolValue, *ref));
+                kprint(" [krnl] relocating %x -> %x+%x (%x)\r\n", *ref, symbolValue, *ref, DO_386_32(symbolValue, *ref));
                 *ref = DO_386_32(symbolValue, *ref);
                 break;
         case R_386_PC32:
                 /* Symbol + Offset - Section Offset */
-                // kprint("RELOCATING %x -> %x+%x-%x (%x)\n", *ref, symbolValue, *ref, (int)ref, DO_386_PC32(symbolValue, *ref, (int)ref));
+                kprint(" [krnl] relocating %x -> %x+%x-%x (%x)\r\n", *ref, symbolValue, *ref, (int)ref, DO_386_PC32(symbolValue, *ref, (int)ref));
                 *ref = DO_386_PC32(symbolValue, *ref, (int)ref);
                 break;
         default:
                 /* Relocation type not supported, display error and return */
-                // kprint("UNKNOWN RELOCATION\n");
+                kprint(" [krnl] unknown rel type: %d\r\n", ELF32_R_TYPE(rel->r_info));
                 return ELF_ERROR;
         }
         return symbolValue;
@@ -269,7 +270,7 @@ int elfApplyRelativeRelocation(elf32EHeader_t *hdr, elf32SectionHeader_t *sectio
                 int result = elfDoRelocation(hdr, reltab, section);
                 if (result == ELF_ERROR)
                 {
-                        // kprint("RELOCATOIN FAILED\n");
+                        kprint(" [krnl] relocation failed\r\n");
                         return ELF_ERROR;
                 }
         }
@@ -307,6 +308,7 @@ pid_t elfLoadProgram(uint8_t *file, size_t file_size, bool *iself, userid_t User
         uint8_t *program_mem = kmalloc(file_size);
         if (!program_mem)
         {
+                kprint(" [krnl] could not clone memory\r\n");
                 return 0;
         }
 
@@ -315,20 +317,22 @@ pid_t elfLoadProgram(uint8_t *file, size_t file_size, bool *iself, userid_t User
         if (entry_point == (void *)-1)
         {
                 kfree(program_mem);
+                kprint(" [krnl] could not get entry point\r\n");
                 return 0;
         }
 
-        uint32_t stack_size = 0x10000;
+        uint32_t stack_size = 0x1000;
         uint8_t *stack_mem = kmalloc(stack_size);
         if (!stack_mem)
         {
                 kfree(program_mem);
+                kprint(" [krnl] could not create stack\r\n");
                 return 0;
         }
 
         task_state_registers_t regs = {0};
         regs.eip = (uintptr_t)entry_point;
-        regs.esp = ((uintptr_t)stack_mem + stack_size) - 4;
+        regs.esp = (uintptr_t)(stack_mem + stack_size) - 4;
         task_t *task = (task_t *)scheduler_add_process(regs, argv[0])->private; 
         task->argc = argc;
         task->argv = argv;
@@ -336,6 +340,7 @@ pid_t elfLoadProgram(uint8_t *file, size_t file_size, bool *iself, userid_t User
         pid_t pid = task->pid;
         if (!pid)
         {
+                kprint(" [krnl] pid is 0\r\n");
                 return 0;
         }
 
@@ -375,10 +380,10 @@ void elfDumpSymbols(void *module)
         elf32EHeader_t *hdr = (elf32EHeader_t *)module;
         elf32SectionHeader_t *sections = elfSectionHeader(hdr);
 
-        kprint("ELF Dump for module at %p:\n", module);
-        kprint("  Type: %s\n", hdr->type == ET_REL ? "REL" : hdr->type == ET_EXEC ? "EXEC"
+        kprint("ELF Dump for module at %p:\r\n", module);
+        kprint("  Type: %s\r\n", hdr->type == ET_REL ? "REL" : hdr->type == ET_EXEC ? "EXEC"
                                                                                   : "OTHER");
-        kprint("  Sections: %d\n", hdr->shnum);
+        kprint("  Sections: %d\r\n", hdr->shnum);
 
         for (int i = 0; i < hdr->shnum; i++)
         {
@@ -387,7 +392,7 @@ void elfDumpSymbols(void *module)
 
                 if (sh->sh_type == SHT_SYMTAB || sh->sh_type == SHT_DYNSYM)
                 {
-                        kprint("\n  Symbol Table [%d]: %s (type=%d)\n", i, sec_name ? sec_name : "?", sh->sh_type);
+                        kprint("\r\n  Symbol Table [%d]: %s (type=%d)\r\n", i, sec_name ? sec_name : "?", sh->sh_type);
 
                         // Get string table for this symbol table
                         if (sh->sh_link >= hdr->shnum)
@@ -425,14 +430,8 @@ void elfDumpSymbols(void *module)
                                 const char *bind_str = (ELF32_ST_BIND(sym->st_info) == STB_GLOBAL) ? "GLOBAL" : (ELF32_ST_BIND(sym->st_info) == STB_LOCAL) ? "LOCAL"
                                                                                                                                                            : "WEAK";
 
-                                kprint("    [%d] %s: %s %s value=0x%x size=%d\n",
+                                kprint("    [%d] %s: %s %s value=0x%x size=%d\r\n",
                                        j, sym_name, bind_str, type_str, sym->st_value, sym->st_size);
-
-                                // Highlight if it's main
-                                if (strcmp(sym_name, "main") == 0)
-                                {
-                                        kprint("      >>> FOUND MAIN! <<<\n");
-                                }
                         }
                 }
         }

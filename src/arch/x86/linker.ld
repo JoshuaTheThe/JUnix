@@ -83,15 +83,11 @@ SECTIONS
                 *(.stabstr.*)
         }
         
+        . += 0x100;
         . = ALIGN(16);
-        . = ALIGN(0x10000);
-        . += 0x10000;
-        .stack (NOLOAD) :
-        {
-                stack_bottom = .;
-                . += 0x20000;
-                stack_top = .;
-        }
+        stack_bottom = .;
+        . += 0x40000;
+        stack_top = .;
 
         /DISCARD/ : {
                 *(.note.GNU-stack)
