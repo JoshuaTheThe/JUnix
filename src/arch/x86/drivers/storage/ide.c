@@ -5,6 +5,7 @@
 #include <mm/alloc.h>
 #include <drivers/pci.h>
 #include <math.h>
+#include <fs/part.h>
 
 IDEDriver_t IDEState = {0};
 uint8_t package[2048], atapi_packet[2048];
@@ -327,6 +328,7 @@ void IDEInitialise(void)
                         ndev->ops = &file_ops;
                         ndev->private = kmalloc(sizeof(int));
                         *((int *)ndev->private) = IDEState.IDEDev[count].Drive;
+                        search_for_partitions(ndev);
                         count++;
                 }
         for (int i = 0; i < 4; i++)

@@ -4,6 +4,35 @@
 
 #include <fs/fs.h>
 #include <stdint.h>
+#include <stdbool.h>
+
+#define FAT_BOOT_SECTOR_SIGN (0xAA55)
+
+#define FAT_EXT_BOOT_RECORD_16_SIGN_A (0x28)
+#define FAT_EXT_BOOT_RECORD_16_SIGN_B (0x29)
+
+#define FAT_INFO_MAGIC_A (0x41615252)
+#define FAT_INFO_MAGIC_B (0x61417272)
+#define FAT_INFO_MAGIC_C (0xAA550000)
+
+#define FAT_READ_ONLY (0x01)
+#define FAT_HIDDEN (0x02)
+#define FAT_SYSTEM (0x04)
+#define FAT_VOLUME_ID (0x08)
+#define FAT_DIRECTORY (0x10)
+#define FAT_ARCHIVE (0x20)
+#define FAT_LONG_FILE_NAME (0xF)
+
+#define FAT_UNUSED (0xE5)
+
+
+typedef enum
+{
+        FAT_UNKNOWN,
+        FAT_12,
+        FAT_16,
+        FAT_32,
+} fat_type_t;
 
 typedef struct __attribute__((__packed__))
 {
@@ -57,6 +86,8 @@ typedef struct __attribute__((__packed__))
         };
 } fat_bpb_t;
 
+_Static_assert(sizeof(fat_bpb_t) == 512, "BPB size incorrect");
+
 typedef struct __attribute__((__packed__))
 {
         uint32_t _0x41615252;
@@ -67,5 +98,46 @@ typedef struct __attribute__((__packed__))
         uint8_t  reserved2[12];
         uint32_t _0xAA550000;
 } fat_fsinfo_t;
+
+typedef struct __attribute__((__packed__))
+{
+        uint8_t hour : 5;
+        uint8_t minutes : 6;
+        uint8_t seconds : 5; /* Multiply By 2 */
+} fat_time_t;
+
+typedef struct __attribute__((__packed__))
+{
+        uint8_t year : 7;
+        uint8_t month : 4;
+        uint8_t day : 5;
+} fat_date_t;
+
+typedef struct __attribute__((__packed__))
+{
+        uint8_t name[8], ext[3];
+        uint8_t flags;
+        uint8_t reserved;
+        uint8_t __time_ignore; /* we do not care for the purposes of this OS */
+        uint16_t time;
+        uint16_t date;
+        uint16_t last_accessed_date;
+        uint16_t entry_first_cluster_high;
+        uint16_t last_modified_time;
+        uint16_t last_modified_date;
+        uint16_t entry_first_cluster_low;
+        uint32_t size; /* Bytes */
+} fat_dir_t;
+
+typedef struct __attribute__((__packed__))
+{
+        fat_dir_t dir;
+        uint32_t cluster;
+        uint32_t offset;
+        uint32_t index;
+        bool found;
+} fat_file_location_t;
+
+filesystem_t fat_create_fs(void);
 
 #endif

@@ -5,11 +5,12 @@ mkdir -p bin/isodir
 if grub-file --is-x86-multiboot2 bin/junix_x86.o; then
     echo "the file is multiboot"
     mkdir -p bin/isodir/boot/grub
+    mkdir mnt
     cp bin/junix_x86.o bin/isodir/boot
     cp src/arch/x86/grub.cfg bin/isodir/boot/grub/grub.cfg
     
     # Create HDD image instead of ISO
-    dd if=/dev/zero of=bin/junix_x86.hdd bs=1M count=64
+    dd if=/dev/zero of=bin/junix_x86.hdd bs=1M count=32
     
     # Partition and format (using parted and mkfs)
     parted -s bin/junix_x86.hdd mklabel msdos
@@ -24,23 +25,22 @@ if grub-file --is-x86-multiboot2 bin/junix_x86.o; then
     sudo mkfs.fat -F32 "${LOOP}p1"
     
     # Mount
-    sudo mount "${LOOP}p1" /mnt
+    sudo mount "${LOOP}p1" mnt
     
     # Install GRUB to HDD
-    sudo grub-install --target=i386-pc --root-directory=/mnt --boot-directory=/mnt/boot ${LOOP}
+    sudo grub-install --target=i386-pc --root-directory=mnt --boot-directory=mnt/boot ${LOOP}
     
-    sudo mkdir -p /mnt/boot/grub
-    sudo cp bin/junix_x86.o /mnt/boot/
-    sudo cp src/arch/x86/grub.cfg /mnt/boot/grub/
+    sudo mkdir -p mnt/boot/grub
+    sudo cp bin/junix_x86.o mnt/boot/
+    sudo cp src/arch/x86/grub.cfg mnt/boot/grub/
     
     # Cleanup
-    sudo umount /mnt
+    sudo umount mnt
     sudo losetup -d ${LOOP}
     
     # Run QEMU with HDD
     qemu-system-x86_64 \
     -drive file=bin/junix_x86.hdd,if=ide,index=0,format=raw \
-    -drive file=scripts/ufs.img,if=ide,index=1,format=raw \
     -m 256 \
     -debugcon stdio \
     -no-reboot \

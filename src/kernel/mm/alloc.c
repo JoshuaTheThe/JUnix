@@ -1,6 +1,7 @@
 
 #include <mm/alloc.h>
 #include <panic.h>
+#include <string.h>
 
 void *kmalloc(size_t siz)
 {
@@ -30,6 +31,7 @@ void *kmalloc(size_t siz)
                 }
         }
 
+        memset(base, 0, siz);
         return (char *)base + sizeof(block_header_t);
 }
 

@@ -16,6 +16,7 @@
 #include <cpu/features/feature.h>
 #include <cpu/cpu.h>
 #include <drivers/rtc.h>
+#include <fs/fat/fat.h>
 
 void init(int m, uintptr_t a)
 {
@@ -51,24 +52,12 @@ void init(int m, uintptr_t a)
                 }
         }
 
-        file_t *ide0;
-        if (vfs_open("/dev/ide0", &ide0) < 0)
+        filesystem_t fs = fat_create_fs();
+        vnode_t *node;
+        if (vfs_lookup("/dev/ide0p0", &node) < 0)
                 panic(PANIC_TODO);
-        char buf[512];
-        vfs_lseek(ide0, 0, SEEK_SET);
-        if (vfs_read(ide0, buf, sizeof(buf)) < 512)
+        if (vfs_mount("/mnt", &fs, node) < 0)
                 panic(PANIC_TODO);
-        vfs_close(ide0);
-
-        for (size_t i = 0; i < sizeof(buf) >> 4; ++i)
-        {
-                for (size_t j = 0; j < 16; ++j)
-                {
-                        kprint("%x ", buf[i * 16 + j] & 255);
-                }
-
-                kprint("\r\n");
-        }
 
         file_t *rtc;
         if (vfs_open("/dev/rtc", &rtc) < 0)

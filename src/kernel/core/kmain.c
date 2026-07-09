@@ -12,6 +12,7 @@ void kmain(void)
                 panic(PANIC_TODO);
         write(fd, "Hello, World!\r\n", 15);
         close(fd);
+        panic(PANIC_TODO);
         while(1)
                 cpu_pause();
 }

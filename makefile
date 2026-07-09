@@ -36,8 +36,8 @@ override KCFLAGS += \
     -std=gnu11 \
     -ffreestanding \
     -fno-builtin \
-    -Werror \
-    $(ARCH_CFLAGS)
+    $(ARCH_CFLAGS) \
+    #-Werror
 
 override ASFLAGS += \
     -c \
