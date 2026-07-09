@@ -129,13 +129,10 @@ typedef struct __attribute__((__packed__))
         uint32_t size; /* Bytes */
 } fat_dir_t;
 
-typedef struct __attribute__((__packed__))
+typedef struct
 {
-        fat_dir_t dir;
-        uint32_t cluster;
-        uint32_t offset;
-        uint32_t index;
-        bool found;
+        uint32_t  cluster;
+        uint32_t  index;
 } fat_file_location_t;
 
 filesystem_t fat_create_fs(void);

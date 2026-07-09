@@ -202,7 +202,7 @@ static uint32_t allocate_cluster(fat_bpb_t *bt, file_t *file)
         return free;
 }
 
-static int iterate_directory(fat_bpb_t *bt, uint32_t dir, file_t *file, int (*callback)(uint32_t,fat_dir_t *))
+static int iterate_directory(fat_bpb_t *bt, uint32_t dir, file_t *file, int (*callback)(uint32_t,fat_dir_t *,size_t))
 {
         uint32_t cluster = dir;
         const size_t entries = bt->sector_size / sizeof(fat_dir_t);
@@ -231,7 +231,7 @@ static int iterate_directory(fat_bpb_t *bt, uint32_t dir, file_t *file, int (*ca
                                 if (dir[i].flags & FAT_VOLUME_ID)
                                         continue;
 
-                                int res = callback(cluster,&dir[i]);
+                                int res = callback(cluster,&dir[i],i);
                                 if (res < 0)
                                         return res;
                         }
@@ -276,7 +276,7 @@ static bool is_dotdot_entry(fat_dir_t *dir)
            dir->name[7] == ' ';
 }
 
-static int add_file(uint32_t clus, fat_dir_t *dir)
+static int add_file(uint32_t clus, fat_dir_t *dir, size_t index)
 {
         if (is_dot_entry(dir) || is_dotdot_entry(dir))
                 return 0;
@@ -298,6 +298,10 @@ static int add_file(uint32_t clus, fat_dir_t *dir)
 
         vnode_t *save = current_parent;
         vnode_t *node = vfs_create_in(current_parent, name, 0);
+        node->ops = NULL;
+        node->private = kmalloc(sizeof(fat_file_location_t));
+        ((fat_file_location_t *)node->private)->cluster = clus;
+        ((fat_file_location_t *)node->private)->index   = index;
         int res = 0;
         if (dir->flags & FAT_DIRECTORY)
         {
