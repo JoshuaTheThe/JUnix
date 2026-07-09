@@ -11,7 +11,8 @@ void kmain(void)
 {
         cpu_ei();
         uint8_t *buffer = kmalloc(2048);
-        char *path = "/mnt/init";
+        char *argv[] = { "/mnt/init", NULL };
+        char *path = argv[0];
         int fd = open(path, 0);
         if (fd < 0)
                 panic(PANIC_TODO);
@@ -20,7 +21,7 @@ void kmain(void)
         bool suc = false;
 
         cpu_di();
-        pid_t pid = elfLoadProgram(buffer, l, &suc, 0, 1, &path);
+        pid_t pid = elfLoadProgram(buffer, l, &suc, 0, 1, argv);
         if (!suc)
         {
                 kprint(" [krnl] failed to open elf program\r\n");
