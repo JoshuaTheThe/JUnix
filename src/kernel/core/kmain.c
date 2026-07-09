@@ -17,7 +17,6 @@ void kmain(void)
         if (fd < 0)
                 panic(PANIC_TODO);
         int l = read(fd, buffer, 2048);
-        kprint(" [krnl] %d bytes\r\n", l);
         bool suc = false;
 
         cpu_di();
@@ -27,11 +26,24 @@ void kmain(void)
                 kprint(" [krnl] failed to open elf program\r\n");
                 panic(PANIC_TODO);
         }
-
-        kprint(" [krnl] executed /mnt/init on pid %d (waow) (%d bytes)\r\n", pid, l);
+        
+        kprint(" [krnl] executed /mnt/init on pid %d (waow)\r\n", pid);
+        kprint(" [krnl] %d bytes\r\n", l);
         kfree(buffer);
         close(fd);
         cpu_ei();
+        task_t *task = scheduler_find_process(pid)->private;
         while(1)
-                cpu_halt();
+        {
+                kprint(" [krnl] EAX=%x\r\n", task->regs.eax);
+                kprint("    --- EBX=%x\r\n", task->regs.ebx);
+                kprint("    --- ECX=%x\r\n", task->regs.ecx);
+                kprint("    --- EDX=%x\r\n", task->regs.edx);
+                kprint("    --- ESI=%x\r\n", task->regs.esi);
+                kprint("    --- EDI=%x\r\n", task->regs.edi);
+                kprint("    --- ESP=%x\r\n", task->regs.esp);
+                kprint("    --- EBP=%x\r\n", task->regs.ebp);
+                kprint("    --- EIP=%x\r\n", task->regs.eip);
+                kdelay(1000);
+        }
 }

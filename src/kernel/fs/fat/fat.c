@@ -415,22 +415,7 @@ static int mount(vnode_t *node, vnode_t *in)
         if (priv->type != FAT_32)
         {
                 kprint(" [krnl] error: fat of type %d provided, only supports fat32, dumping bt\r\n", priv->type);
-                uint8_t *bytes = (uint8_t *)&priv->bpb;
-                for (size_t i = 0, x = 0; i < 512; ++i,++x)
-                {
-                        if (x > 15)
-                        {
-                                kprint("    ");
-                                for (size_t j = i - 16; j < i; ++j)
-                                        kprint("%c", bytes[j] >= ' ' && bytes[j] < 0x80 ? bytes[j] : '.');
-                                kprint("\r\n");
-                                x = 0;
-                        }
-
-                        kprint("%x ", bytes[i] & 255);
-                }
-
-                kprint("\r\n");
+                dump(&priv->bpb, 512);
                 kprint("._0XEBXX90: [%x, %x, %x]\r\n",
                         priv->bpb._0XEBXX90[0] & 255,
                         priv->bpb._0XEBXX90[1] & 255,

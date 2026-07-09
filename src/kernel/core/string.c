@@ -2,6 +2,7 @@
 #include <string.h>
 #include <panic.h>
 #include <mm/alloc.h>
+#include <drivers/kprint.h>
 
 int itoa(char *dest, int n, int base, bool uppercase)
 {
@@ -160,4 +161,23 @@ void strncpy(void *Destination, const void *const Source, const unsigned long Le
                 Dst[i] = 0;
                 ++i;
         }
+}
+
+void dump(void *b, size_t n)
+{
+        uint8_t *bytes = b;
+        for (size_t i = 0, x = 0; i < n; ++i,++x)
+        {
+                if (x > 15)
+                {
+                        kprint("    ");
+                        for (size_t j = i - 16; j < i; ++j)
+                                kprint("%c", bytes[j] >= ' ' && bytes[j] < 0x80 ? bytes[j] : '.');
+                        kprint("\r\n");
+                        x = 0;
+                }
+
+                kprint("%x ", bytes[i] & 255);
+        }
+        kprint("\r\n");
 }

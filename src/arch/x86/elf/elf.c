@@ -71,8 +71,15 @@ void *elfLoadRel(elf32EHeader_t *hdr)
                 kprint(" [krnl] stage two failed\r\n");
                 return (void *)-1;
         }
-        // kprint("HEADER ENTRY: %x\r\n", hdr->entry);
-        return (void *)hdr->entry;
+        
+        void *entry = elfSymbol(hdr, "_start");
+        if (!entry)
+        {
+                kprint(" [krnl] no _start symbol\r\n");
+                return (void *)-1;
+        }
+
+        return entry;
 } /* end of elfLoadRel */
 
 /**
@@ -84,11 +91,15 @@ void *elfLoadFile(void *file)
         elf32EHeader_t *header = (elf32EHeader_t *)file;
         /* NULL+Invalid+Supported Check */
         if (!elfCheckSupported(header))
+        {
+                kprint(" [krnl] Not Supported\r\n");
                 return NULL;
+        }
         switch (header->type)
         {
         case ET_EXEC:
         default:
+                kprint(" [krnl] EXEC - Not Supported\r\n");
                 return NULL;
         case ET_REL:
                 return elfLoadRel(header);
@@ -331,13 +342,20 @@ pid_t elfLoadProgram(uint8_t *file, size_t file_size, bool *iself, userid_t User
         }
 
         task_state_registers_t regs = {0};
-        regs.eip = (uintptr_t)entry_point;
+        regs.eip = (uintptr_t)(entry_point);
         regs.esp = (uintptr_t)(stack_mem + stack_size) - 4;
+        regs.cs  = 0x8;
+        regs.ds  = 0x10;
+        regs.es  = 0x10;
+        regs.ss  = 0x10;
+        regs.fs  = 0x10;
+        regs.gs  = 0x10;
         task_t *task = (task_t *)scheduler_add_process(regs, argv[0])->private; 
         task->argc = argc;
         task->argv = argv;
         task->user = User;
         pid_t pid = task->pid;
+        dump((void *)regs.eip, 512);
         if (!pid)
         {
                 kprint(" [krnl] pid is 0\r\n");
@@ -476,19 +494,14 @@ void *elfSymbol(void *module, const char *name)
 
                         if (strcmp(sym_name, name) == 0)
                         {
-                                uint32_t symbol_value = sym->st_value;
-                                uint32_t actual_addr;
-
                                 if (sym->st_shndx == SHN_ABS)
-                                {
-                                        actual_addr = symbol_value;
-                                }
-                                else
-                                {
-                                        actual_addr = symbol_value - link_address;
-                                }
-
-                                return (void *)(actual_addr + (uintptr_t)module);
+                                        return (void *)sym->st_value;
+                                elf32SectionHeader_t *target = elfSection(hdr, sym->st_shndx);
+                                if (!target)
+                                        return NULL;
+                                return (void *)((uintptr_t)hdr +
+                                                target->sh_offset +
+                                                sym->st_value);
                         }
                 }
         }
