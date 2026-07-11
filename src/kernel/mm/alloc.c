@@ -82,15 +82,17 @@ void kfree(void *ptr)
         if (!ptr)
                 return;
         block_header_t *header =
-                (block_header_t *)((uintptr_t)ptr - sizeof(block_header_t));
+        (block_header_t *)((uintptr_t)ptr - sizeof(block_header_t));
         uintptr_t virt = (uintptr_t)header;
-        for (size_t i = 0; i < header->pages; i++)
+        size_t pages = header->pages;
+        for (size_t i = 0; i < pages; i++)
         {
                 uintptr_t page = virt + i * PAGE_SIZE;
                 uintptr_t phys = virt_to_phys((void *)page);
+
                 paging_unmap(page);
                 pmm_free((void *)phys);
         }
 
-        vfree(virt, header->pages * PAGE_SIZE);
+        vfree(virt, pages * PAGE_SIZE);
 }

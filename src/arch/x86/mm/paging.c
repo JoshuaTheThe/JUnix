@@ -21,7 +21,7 @@ uintptr_t virt_to_phys(void *ptr)
                 return 0;
 
         page_table_t *pt =
-        (page_table_t *)(pde & ~0xFFF);
+                (page_table_t *)(pde & ~0xFFF);
 
         pte_t pte = pt->entries[tab];
 
@@ -33,7 +33,22 @@ uintptr_t virt_to_phys(void *ptr)
 
 void *phys_to_virt(uintptr_t addr)
 {
-        return (void *)addr;
+        if (identity)
+                return (void *)addr;
+        uintptr_t phys = addr & ~0xFFF;
+        uintptr_t offset = addr & 0xFFF;
+
+        for (size_t i = 0; i < active_task->mappings.count; i++)
+        {
+                mapping_t *m = &active_task->mappings.items[i];
+
+                if (m->phys == phys)
+                {
+                        return (void *)(m->virt + offset);
+                }
+        }
+
+        return NULL;
 }
 
 void paging_switch(page_directory_t *pd)
@@ -102,6 +117,13 @@ void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
                 (phys & ~0xFFF) |
                 flags |
                 PAGE_PRESENT;
+        phys &= ~0xFFF;
+        virt &= ~0xFFF;
+
+        mapping_t *m =
+            &active_task->mappings.items[active_task->mappings.count++];
+        m->phys = phys;
+        m->virt = virt;
 }
 
 bool remove_mapping(uintptr_t phys)
@@ -112,7 +134,7 @@ bool remove_mapping(uintptr_t phys)
                 if (active_task->mappings.items[i].phys == phys)
                 {
                         // Move the last entry over this one
-                        active_task->mappings.items[i] = active_task->mappings.items[active_task->mappings.count];
+                        active_task->mappings.items[i] = active_task->mappings.items[active_task->mappings.count - 1];
                         active_task->mappings.count--;
                         return true;
                 }

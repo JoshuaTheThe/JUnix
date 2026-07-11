@@ -8,6 +8,8 @@
 #include <mm/paging.h>
 #include <fs/fs.h>
 
+#define MAX_MAPPINGS (16384 * 2)
+
 typedef uint64_t pid_t;
 
 typedef struct task_t
@@ -41,10 +43,8 @@ typedef struct task_t
 
         struct
         {
-                mapping_t *items;
-                size_t     capacity;
+                mapping_t  items[MAX_MAPPINGS];
                 size_t     count;
-                int        result;
         } mappings;
 
         page_directory_t *pd;
