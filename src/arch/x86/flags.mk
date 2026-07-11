@@ -6,7 +6,7 @@ override ARCH_CFLAGS += -m32 -nostdlib -ffreestanding \
     -mno-3dnow \
     -mno-avx \
     -msoft-float
-override ARCH_ASFLAGS += -m32 -fno-stack-protector -nostdlib -ffreestanding
+override ARCH_ASFLAGS += -m32 -fno-stack-protector -nostdlib -ffreestanding -fno-pic -fno-pie
 override ARCH_KLDFLAGS += -melf_i386
 override ARCH_OUTPUT_SUFFIX := _x86.o
 override ARCH_LINKER_SCRIPT := src/arch/x86/linker.ld
