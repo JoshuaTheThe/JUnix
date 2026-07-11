@@ -17,6 +17,7 @@
 #include <cpu/cpu.h>
 #include <drivers/rtc.h>
 #include <fs/fat/fat.h>
+#include <elf.h>
 
 void init(int m, uintptr_t a)
 {
