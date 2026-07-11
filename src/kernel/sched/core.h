@@ -8,7 +8,7 @@
 #include <mm/paging.h>
 #include <fs/fs.h>
 
-#define MAX_MAPPINGS (16384 * 2)
+#define MAX_MAPPINGS (16384 + 1024)
 
 typedef uint64_t pid_t;
 

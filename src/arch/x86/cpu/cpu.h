@@ -15,4 +15,16 @@ static inline void cpu_pause(void) { __asm volatile("pause"); cpu_halt(); }
 static inline void cpu_di(void)    { __asm volatile("cli");   }
 static inline void cpu_ei(void)    { __asm volatile("sti");   }
 
+static inline uint32_t save_flags(void)
+{
+        uint32_t flags;
+        __asm volatile("pushfl; popl %0" : "=r"(flags) : : "memory");
+        return flags;
+}
+
+static inline void restore_flags(uint32_t flags)
+{
+        __asm volatile("pushl %0; popfl" : : "r"(flags) : "memory", "cc");
+}
+
 #endif

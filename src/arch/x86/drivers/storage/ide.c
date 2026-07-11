@@ -217,7 +217,6 @@ uint8_t IDEPrintErr(uint32_t drive, uint8_t err)
 
 uint8_t IDEPolling(uint8_t channel, uint32_t advanced_check)
 {
-
         for (int i = 0; i < 4; i++)
                 IDERead(channel, ATA_REG_ALTSTATUS);
 

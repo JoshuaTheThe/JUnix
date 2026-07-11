@@ -2,13 +2,15 @@
 #include <mm/paging.h>
 #include <mm/pmm.h>
 #include <sched/core.h>
+#include <cpu/cpu.h>
+#include <drivers/kprint.h>
 #include <string.h>
 
-static bool identity = true;
+static bool paging_active = false;
 
 uintptr_t virt_to_phys(void *ptr)
 {
-        if (identity)
+        if (!paging_active)
                 return (uintptr_t)ptr;
         uintptr_t virt = (uintptr_t)ptr;
 
@@ -21,7 +23,9 @@ uintptr_t virt_to_phys(void *ptr)
                 return 0;
 
         page_table_t *pt =
-                (page_table_t *)(pde & ~0xFFF);
+        phys_to_virt(pde & ~0xFFF);
+        if (!pt)
+                return 0;
 
         pte_t pte = pt->entries[tab];
 
@@ -33,11 +37,10 @@ uintptr_t virt_to_phys(void *ptr)
 
 void *phys_to_virt(uintptr_t addr)
 {
-        if (identity)
+        if (!paging_active)
                 return (void *)addr;
         uintptr_t phys = addr & ~0xFFF;
         uintptr_t offset = addr & 0xFFF;
-
         for (size_t i = 0; i < active_task->mappings.count; i++)
         {
                 mapping_t *m = &active_task->mappings.items[i];
@@ -105,10 +108,15 @@ void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
         {
                 page_table_t *pt = pmm_alloc();
                 memset(pt, 0, PAGE_SIZE);
+                uintptr_t pt_phys = virt_to_phys(pt);
                 active_task->pd->entries[dir] =
-                    virt_to_phys(pt) |
+                        pt_phys |
                         PAGE_PRESENT |
                         PAGE_WRITE;
+                mapping_t *m =
+                        &active_task->mappings.items[active_task->mappings.count++];
+                        m->phys = pt_phys & ~0xFFF;
+                        m->virt = (uintptr_t)pt & ~0xFFF;
         }
 
         page_table_t *pt =
@@ -124,6 +132,7 @@ void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
             &active_task->mappings.items[active_task->mappings.count++];
         m->phys = phys;
         m->virt = virt;
+        __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
 }
 
 bool remove_mapping(uintptr_t phys)
@@ -131,7 +140,7 @@ bool remove_mapping(uintptr_t phys)
         phys &= ~0xFFF;
         for (size_t i = 0; i < active_task->mappings.count; i++)
         {
-                if (active_task->mappings.items[i].phys == phys)
+                if (active_task->mappings.items[i].phys == (phys & ~0xFFF))
                 {
                         // Move the last entry over this one
                         active_task->mappings.items[i] = active_task->mappings.items[active_task->mappings.count - 1];
@@ -145,22 +154,19 @@ bool remove_mapping(uintptr_t phys)
 
 void paging_unmap(uintptr_t virt)
 {
+        return;
         uint32_t dir = PAGE_DIR_INDEX(virt);
         uint32_t tab = PAGE_TAB_INDEX(virt);
 
         pde_t pde = active_task->pd->entries[dir];
         if (!(pde & PAGE_PRESENT))
                 return;
-
-        page_table_t *pt = phys_to_virt(pde & ~0xFFF);
-
-        pt->entries[tab] = 0;
-
-        __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
+        kprint(" [krnl] unmapping virt %x (%x)\r\n", virt, phys_to_virt(pde & ~0xFFF));
         remove_mapping(virt);
-
-        // TODO - move this to pmm (ref count the pmm)
-        pmm_free((void *)virt_to_phys((void *)virt));
+        //pmm_free((void *)virt_to_phys((void *)virt));
+        page_table_t *pt = phys_to_virt(pde & ~0xFFF);
+        pt->entries[tab] = 0;
+        __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
 }
 
 void paging_init(void)
@@ -168,13 +174,27 @@ void paging_init(void)
         active_task = &early_task;
         paging_disable();
         active_task->pd = pmm_alloc();
+        mapping_t *m =
+            &active_task->mappings.items[active_task->mappings.count++];
+        m->phys = virt_to_phys(active_task->pd) & ~0xFFF;
+        m->virt = (uintptr_t)active_task->pd & ~0xFFF;
         memset(active_task->pd, 0, PAGE_SIZE);
 
         /*
-        * Identity map first 64 MiB
+        * Identity map first 128 KiB (pmm bitmap)
         */
         for (uintptr_t addr = 0;
-             addr < 0x04000000;
+             addr < 0x20000;
+             addr += PAGE_SIZE)
+        {
+                paging_map(addr, addr, PAGE_WRITE);
+        }
+
+        /*
+        * Identity map rest 15 MiB
+        */
+        for (uintptr_t addr = 0x100000;
+             addr < 0x01000000;
              addr += PAGE_SIZE)
         {
                 paging_map(addr, addr, PAGE_WRITE);
@@ -189,5 +209,5 @@ void paging_init(void)
         * Enable paging
         */
         paging_enable();
-        identity = false;
+        paging_active = true;
 }

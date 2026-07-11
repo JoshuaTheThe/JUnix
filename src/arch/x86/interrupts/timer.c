@@ -6,18 +6,6 @@
 
 extern volatile unsigned long ticks_since_boot;
 
-static inline uint32_t save_flags(void)
-{
-        uint32_t flags;
-        __asm volatile("pushfl; popl %0" : "=r"(flags) : : "memory");
-        return flags;
-}
-
-static inline void restore_flags(uint32_t flags)
-{
-        __asm volatile("pushl %0; popfl" : : "r"(flags) : "memory", "cc");
-}
-
 void kdelay(unsigned long ticks)
 {
         if (ticks == 0)

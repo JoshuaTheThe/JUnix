@@ -97,6 +97,6 @@ SECTIONS
                 *(.comment.*)
         }
 
-        mem_start   = 0x01000000;
+        mem_start   = 0x0400000;
         page_bitmap = 0x1000;
 }
