@@ -72,6 +72,7 @@ static fat_type_t identify(fat_bpb_t *bt)
         return FAT_UNKNOWN;
 }
 
+__attribute__((__used__))
 static uint32_t first_root(fat_bpb_t *bt)
 {
         return first_data(bt) - root_dir_size(bt);
@@ -191,6 +192,7 @@ static void set_cluster(fat_bpb_t *bt, uint32_t cluster, uint32_t value, file_t 
         vfs_write(file, sector, sizeof(sector));
 }
 
+__attribute__((__used__))
 static uint32_t allocate_cluster(fat_bpb_t *bt, file_t *file)
 {
         uint32_t free = find_free_cluster(bt, file);
@@ -270,7 +272,7 @@ static int read(file_t *file, void *buf, size_t n)
         uint32_t first_cluster =
         ((uint32_t)dir.entry_first_cluster_high << 16) |
          dir.entry_first_cluster_low;
-        if (file->offset >= dir.size)
+        if ((uint32_t)file->offset >= (uint32_t)dir.size)
                 return 0;
         if (file->offset + n > dir.size)
         n = dir.size - file->offset;

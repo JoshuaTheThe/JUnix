@@ -1,6 +1,7 @@
 
 #include <stdint.h>
 #include <drivers/kprint.h>
+#include <panic.h>
 
 void divide_error_handler(void)
 {
@@ -70,8 +71,9 @@ void general_protection_handler(void)
 void page_fault_handler(int cs, int eip)
 {
         uintptr_t fault_addr;
-        asm volatile("mov %%cr2, %0" : "=r"(fault_addr));
+        __asm volatile("mov %%cr2, %0" : "=r"(fault_addr));
         kprint(" [error] page fault: %x, @%x:%x\r\n", fault_addr, cs, eip);
+        panic(PANIC_PAGE_FAULT);
 }
 
 void x87_exception_handler(void)

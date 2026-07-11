@@ -86,7 +86,7 @@ SECTIONS
         . += 0x100;
         . = ALIGN(16);
         stack_bottom = .;
-        . += 0x40000;
+        . += 0x100000;
         stack_top = .;
 
         /DISCARD/ : {
@@ -97,6 +97,8 @@ SECTIONS
                 *(.comment.*)
         }
 
-        mem_start   = 0x0400000;
+        . = ALIGN(4096);
+
+        mem_start   = .;
         page_bitmap = 0x1000;
 }

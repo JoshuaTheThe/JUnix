@@ -34,6 +34,7 @@ typedef enum
         PANIC_CORRUPT_FS,
         PANIC_REQUIRED_FEATURE,
         PANIC_DIVIDE_BY_ZERO,
+        PANIC_PAGE_FAULT,
 } panic_code_t;
 
 typedef enum

@@ -463,14 +463,6 @@ void *elfSymbol(void *module, const char *name)
         elf32EHeader_t *hdr = (elf32EHeader_t *)module;
         elf32SectionHeader_t *sections = elfSectionHeader(hdr);
 
-        uint32_t link_address = 0x08000000; /* TODO - find actual link_addr */
-        // Try to find a better link address from program headers
-        // For now, use the entry point as a hint
-        if (hdr->entry < 0x1000000)
-        {
-                link_address = hdr->entry & 0xF0000000;
-        }
-
         for (int i = 0; i < hdr->shnum; i++)
         {
                 elf32SectionHeader_t *sh = &sections[i];

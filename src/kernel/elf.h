@@ -150,8 +150,8 @@ typedef enum
         SHT_HIOS          = 0x6fffffff,
         SHT_LOPROC        = 0x70000000,
         SHT_HIPROC        = 0x7fffffff,
-        SHT_LOUSER        = 0x80000000,
-        SHT_HIUSER        = 0xffffffff,
+        SHT_LOUSER        = (int)0x80000000,
+        SHT_HIUSER        = (int)0xffffffff,
 } SHT_T;
 
 typedef enum
@@ -167,7 +167,7 @@ typedef enum
         SHF_GROUP            = 0x200,
         SHF_TLS              = 0x400,
         SHF_MASKOS           = 0x0ff00000,
-        SHF_MASKPROC         = 0xf0000000,
+        SHF_MASKPROC         = (int)0xf0000000,
 } SHF_T;
 
 typedef enum

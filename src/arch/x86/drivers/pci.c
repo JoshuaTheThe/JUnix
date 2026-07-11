@@ -341,6 +341,7 @@ static inline uint8_t pciConfigReadByte(uint16_t bus, uint8_t slot, uint8_t func
         return (uint8_t)((data >> ((offset & 3) * 8)) & 0xFF);
 }
 
+__attribute__((__used__))
 static inline void pciConfigWriteByte(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset, uint8_t value)
 {
         uint32_t old = pciConfigReadDword(bus, slot, func, offset);
@@ -376,6 +377,7 @@ static inline void pciReadDeviceInfo(pci_device_t *dev, uint16_t bus, uint8_t sl
         }
 }
 
+__attribute__((__used__))
 static inline void pciEnableBusMastering(pci_device_t *dev)
 {
         uint16_t command = pciConfigReadWord(dev->bus, dev->slot, dev->function, 0x04);

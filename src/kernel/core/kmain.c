@@ -14,7 +14,7 @@ void kmain(void)
         int fd = open("/mnt/hello.txt", 0);
         if (fd < 0)
                 panic(PANIC_TODO);
-        int l = read(fd, buffer, 2048);
+        read(fd, buffer, 2048);
         kprint("%s\r\n", buffer);
         kfree(buffer);
         close(fd);

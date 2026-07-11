@@ -21,27 +21,27 @@ void idt_init(void)
                 idt_set((uint8_t)i, (void *)default_int, idt);
         }
 
-        idt_set(0,  divide_error, idt);
-        idt_set(1,  debug_exception, idt);
-        idt_set(2,  nmi_exception, idt);
-        idt_set(3,  breakpoint_exception, idt);
-        idt_set(4,  overflow_exception, idt);
-        idt_set(5,  bound_exception, idt);
-        idt_set(6,  invalid_opcode, idt);
-        idt_set(7,  device_not_available, idt);
-        idt_set(8,  double_fault, idt);
-        idt_set(10, invalid_tss, idt);
-        idt_set(11, segment_not_present, idt);
-        idt_set(12, stack_fault, idt);
-        idt_set(13, general_protection, idt);
-        idt_set(14, page_fault, idt);
-        idt_set(16, x87_exception, idt);
-        idt_set(17, alignment_check, idt);
-        idt_set(18, machine_check, idt);
-        idt_set(19, simd_exception, idt);
-        idt_set(0x20, timer_int, idt);
-        idt_set(0x2e, ide_int, idt);
-        idt_set(0x2f, ide_int, idt);
+        idt_set(0,    (void *)divide_error, idt);
+        idt_set(1,    (void *)debug_exception, idt);
+        idt_set(2,    (void *)nmi_exception, idt);
+        idt_set(3,    (void *)breakpoint_exception, idt);
+        idt_set(4,    (void *)overflow_exception, idt);
+        idt_set(5,    (void *)bound_exception, idt);
+        idt_set(6,    (void *)invalid_opcode, idt);
+        idt_set(7,    (void *)device_not_available, idt);
+        idt_set(8,    (void *)double_fault, idt);
+        idt_set(10,   (void *)invalid_tss, idt);
+        idt_set(11,   (void *)segment_not_present, idt);
+        idt_set(12,   (void *)stack_fault, idt);
+        idt_set(13,   (void *)general_protection, idt);
+        idt_set(14,   (void *)page_fault, idt);
+        idt_set(16,   (void *)x87_exception, idt);
+        idt_set(17,   (void *)alignment_check, idt);
+        idt_set(18,   (void *)machine_check, idt);
+        idt_set(19,   (void *)simd_exception, idt);
+        idt_set(0x20, (void *)timer_int, idt);
+        idt_set(0x2e, (void *)ide_int, idt);
+        idt_set(0x2f, (void *)ide_int, idt);
         
         idt_set(0x80, (void *)sys_wrapper, idt);
         idtp.limit = (sizeof(idt_entry_t) * IDT_ENTRIES) - 1;

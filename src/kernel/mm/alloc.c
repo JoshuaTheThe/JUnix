@@ -2,6 +2,7 @@
 #include <mm/alloc.h>
 #include <mm/paging.h>
 #include <mm/pmm.h>
+#include <drivers/kprint.h>
 #include <string.h>
 #include <panic.h>
 
@@ -33,7 +34,7 @@ void vfree(uintptr_t v, size_t size)
         return;
 }
 
-void *kmalloc(size_t size)
+__attribute__((ownership_returns(kmalloc))) void *kmalloc(size_t size)
 {
         if (size == 0)
                 return NULL;
@@ -77,10 +78,11 @@ void *kmalloc(size_t size)
         return (void *)(virt + sizeof(block_header_t));
 }
 
-void kfree(void *ptr)
+__attribute__((ownership_takes(kmalloc, 1))) void kfree(void *ptr)
 {
         if (!ptr)
                 return;
+        kprint(" [kfree] freeing %x\r\n", ptr);
         block_header_t *header =
         (block_header_t *)((uintptr_t)ptr - sizeof(block_header_t));
         uintptr_t virt = (uintptr_t)header;
