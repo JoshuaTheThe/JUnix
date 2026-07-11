@@ -5,7 +5,7 @@
 1. copy_from_user
 2. copy_to_user
 
-3. Switch PD during interrupts
+3. Switch PD during interrupts, DONE
    - or ensure kernel mappings exist in every address space
 
 4. Move kernel to high memory, DONE
