@@ -8,7 +8,7 @@
 3. Switch PD during interrupts
    - or ensure kernel mappings exist in every address space
 
-4. Move kernel to high memory
+4. Move kernel to high memory, DONE
    - shared kernel mappings in every process PD
    - interrupt handlers always mapped
 

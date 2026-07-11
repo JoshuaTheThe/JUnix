@@ -108,6 +108,7 @@ static file_ops_t fb_info_ops =
 
 void fb_init(int magic, uintptr_t addr)
 {
+        LOG(" [fb] magic: %x, addr = %x\r\n", magic, addr);
         if (magic != 0x36d76289)
                 panic(PANIC_INCORRECT_BOOTLOADER);
         

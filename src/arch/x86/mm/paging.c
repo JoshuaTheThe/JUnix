@@ -10,6 +10,12 @@ static bool paging_active = false;
 
 uintptr_t virt_to_phys(void *ptr)
 {
+        if ((uintptr_t)ptr >= 0xC0000000 &&
+            (uintptr_t)ptr <  0xC1000000 && !paging_active)
+        {
+                return (uintptr_t)ptr - (0xC0000000 - 0x200000);
+        }
+
         if (!paging_active)
                 return (uintptr_t)ptr;
         uintptr_t virt = (uintptr_t)ptr;
@@ -37,6 +43,11 @@ uintptr_t virt_to_phys(void *ptr)
 
 void *phys_to_virt(uintptr_t addr)
 {
+        if (addr >= 0x200000 &&
+            addr <  0x210000 && !paging_active)
+        {
+                return (void *)(addr + (0xC0000000 - 0x200000));
+        }
         if (!paging_active)
                 return (void *)addr;
         uintptr_t phys = addr & ~0xFFF;
@@ -147,7 +158,8 @@ void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
         m->phys = phys & ~0xFFF;
         m->virt = virt & ~0xFFF;
 
-        __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
+        if (paging_active)
+                __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
 
         restore_flags(flags_saved);
 }
@@ -188,7 +200,6 @@ void paging_unmap(uintptr_t virt)
 void paging_init(void)
 {
         active_task = &early_task;
-        paging_disable();
         active_task->pd = pmm_alloc();
         mapping_t *m =
             &active_task->mappings.items[active_task->mappings.count++];
@@ -197,9 +208,9 @@ void paging_init(void)
         memset(active_task->pd, 0, PAGE_SIZE);
 
         /*
-        * Identity map first 128 KiB (pmm bitmap)
-        */
-        LOG(" [mm] identity mapping PMM bitmap\r\n");
+         * Map first 128 KiB (pmm bitmap)
+         */
+        LOG(" [mm] mapping PMM bitmap\r\n");
         for (uintptr_t addr = 0;
              addr < 0x20000;
              addr += PAGE_SIZE)
@@ -208,26 +219,32 @@ void paging_init(void)
         }
 
         /*
-        * Identity map rest 15 MiB
-        */
-        LOG(" [mm] identity mapping 0x100000-0x1000000, 15MiB\r\n");
-        for (uintptr_t addr = 0x100000;
-             addr < 0x01000000;
+         * Map kernel
+         */
+        LOG(" [mm] mapping 0xC0000000-0xC0800000 as 0x00200000 - 0x00800000\r\n");
+        for (uintptr_t addr = 0x200000;
+             addr < 0x800000;
+             addr += PAGE_SIZE)
+        {
+                paging_map(addr + (0xC0000000 - 0x200000), addr, PAGE_WRITE);
+        }
+
+        /*
+         * Map grub shit
+         */
+        LOG(" [mm] identity mapping 0x00100000 - 0x00200000 \r\n");
+        for (uintptr_t addr = 0x00100000;
+             addr < 0x00200000;
              addr += PAGE_SIZE)
         {
                 paging_map(addr, addr, PAGE_WRITE);
         }
-
+        
         /*
-        * Load page directory
-        */
+         * Load page directory
+         */
         LOG(" [mm] loading page dir\r\n");
         paging_switch(active_task->pd);
 
-        /*
-        * Enable paging
-        */
-        LOG(" [mm] enabling paging...\r\n");
-        paging_enable();
         paging_active = true;
 }

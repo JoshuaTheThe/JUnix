@@ -2,89 +2,39 @@ ENTRY(_start)
 
 SECTIONS
 {
-	. = 2M;
+        KERNEL_VMA = 0xC0000000;
+        KERNEL_LMA = 0x00200000;
+        KERNEL_RELOC = 0xC0000000 - 0x00200000;
+        . = KERNEL_VMA;
 
-        .text : {
+        .text : AT(ADDR(.text) - KERNEL_VMA + KERNEL_LMA)
+        {
                 *(.multiboot)
                 *(.multiboot2)
-                *(.text)
-                *(.text.*)      /* Catch all .text.* sections */
                 *(.text*)
         }
-        
-        .rodata : {
-                *(.rodata)
-                *(.rodata.*)    /* Catch all .rodata.* sections */
-                *(.rodata*)     /* Catch any other rodata variants */
-        }
-        
-        .data : {
-                *(.data)
-                *(.data.*)      /* Catch all .data.* sections */
-                *(.got)         /* Global offset table */
-                *(.got.*)       /* GOT entries */
-                *(.got.plt)     /* GOT PLT entries */
-                *(.plt)         /* Procedure linkage table */
-                *(.plt.*)
-                *(.iplt)        /* Inline PLT */
-                *(.igot.*)
-                *(.toc)         /* Table of contents (PPC) */
-                *(.toc.*)
-        }
-        
-        .bss : {
-                *(COMMON)
-                *(.bss)
-                *(.bss.*)       /* Catch all .bss.* sections */
-                *(COMMON.*)
+
+        .rodata : AT(ADDR(.rodata) - KERNEL_VMA + KERNEL_LMA)
+        {
+                *(.rodata*)
         }
 
-        . = ALIGN(4);
-        .init : {
-                *(.init)
-                *(.init.*)
+        .data : AT(ADDR(.data) - KERNEL_VMA + KERNEL_LMA)
+        {
+                *(.data*)
+                *(.got*)
+                *(.plt*)
+                *(.iplt*)
         }
-        
-        .fini : {
-                *(.fini)
-                *(.fini.*)
+
+        .bss : AT(ADDR(.bss) - KERNEL_VMA + KERNEL_LMA)
+        {
+                *(COMMON)
+                *(.bss*)
         }
-        
-        .ctors : {
-                *(.ctors)
-                *(.ctors.*)
-                *(.init_array)
-                *(.init_array.*)
-        }
-        
-        .dtors : {
-                *(.dtors)
-                *(.dtors.*)
-                *(.fini_array)
-                *(.fini_array.*)
-        }
-        
-        .jcr : {
-                *(.jcr)
-        }
-        
-        .debug : {
-                *(.debug)
-                *(.debug.*)
-        }
-        
-        .stab : {
-                *(.stab)
-                *(.stab.*)
-        }
-        
-        .stabstr : {
-                *(.stabstr)
-                *(.stabstr.*)
-        }
-        
-        . += 0x100;
-        . = ALIGN(16);
+
+        . = ALIGN(4096);
+
         stack_bottom = .;
         . += 0x100000;
         stack_top = .;
@@ -93,11 +43,8 @@ SECTIONS
                 *(.note.GNU-stack)
                 *(.gnu_debuglink)
                 *(.gnu.lto_*)
-                *(.comment)
-                *(.comment.*)
+                *(.comment*)
         }
-
-        . = ALIGN(4096);
 
         mem_start   = .;
         page_bitmap = 0x1000;

@@ -124,6 +124,7 @@ void scheduler_next(void)
         }
 
         active_task = current_process_fil->private;
+        paging_switch(active_task->pd);
         ackint();
 }
 

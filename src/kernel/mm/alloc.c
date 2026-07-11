@@ -47,7 +47,7 @@ __attribute__((ownership_returns(__kmalloc))) void *__kmalloc(size_t size, const
                 panic(PANIC_RAN_OUT_OF_MEMORY);
         for (size_t i = 0; i < pages; i++)
         {
-                uintptr_t phys = (uintptr_t)pmm_alloc();
+                uintptr_t phys = (uintptr_t)virt_to_phys(pmm_alloc());
                 if (!phys)
                 {
                         for (size_t j = 0; j < i; j++)
