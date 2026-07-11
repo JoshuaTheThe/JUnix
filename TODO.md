@@ -71,3 +71,10 @@
 13. mkdir
 14. rmdir
 15. dup
+16. brk()
+17. mmap()
+18. munmap()
+19. gettimeofday()
+20. write()
+21. read()
+22. close()
