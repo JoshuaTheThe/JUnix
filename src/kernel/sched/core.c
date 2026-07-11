@@ -6,6 +6,7 @@
 #include <mm/alloc.h>
 #include <dbg.h>
 #include <cpu/cpu.h>
+#include <mm/paging.h>
 
 task_state_registers_t scratch_proc = {0};
 uint32_t ticks_since_boot = 0;
