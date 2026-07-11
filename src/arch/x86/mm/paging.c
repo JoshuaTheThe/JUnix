@@ -170,7 +170,6 @@ bool remove_mapping(uintptr_t phys)
 
 void paging_unmap(uintptr_t virt)
 {
-        return;
         uint32_t dir = PAGE_DIR_INDEX(virt);
         uint32_t tab = PAGE_TAB_INDEX(virt);
 

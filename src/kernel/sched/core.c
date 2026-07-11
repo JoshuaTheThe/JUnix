@@ -155,7 +155,8 @@ int scheduler_mount(vnode_t *node, void *data) // not allowed to unmount
         (void)data;
         node->ops = &ops;
         current_process_fil = scheduler_add_process((task_state_registers_t){0}, "krnl");
-        *((task_t *)current_process_fil->private) = early_task;
+        ((task_t *)current_process_fil->private)->mappings = early_task.mappings;
+        ((task_t *)current_process_fil->private)->pd       = early_task.pd;
         active_task = current_process_fil->private;
         return 0;
 }
