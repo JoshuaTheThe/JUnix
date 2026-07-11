@@ -1,4 +1,5 @@
 
+#include <stdint.h>
 #include <drivers/kprint.h>
 
 void divide_error_handler(void)
@@ -68,7 +69,9 @@ void general_protection_handler(void)
 
 void page_fault_handler(void)
 {
-        kprint(" [error] page fault\r\n");
+        uintptr_t fault_addr;
+        asm volatile("mov %%cr2, %0" : "=r"(fault_addr));
+        kprint(" [error] page fault: %x\r\n", fault_addr);
 }
 
 void x87_exception_handler(void)
