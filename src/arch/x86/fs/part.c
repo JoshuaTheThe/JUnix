@@ -2,7 +2,7 @@
 #include <fs/part.h>
 #include <panic.h>
 #include <mm/alloc.h>
-#include <drivers/kprint.h>
+#include <dbg.h>
 #include <string.h>
 
 static int read(file_t *f, void *buf, size_t count)
@@ -46,7 +46,7 @@ int search_for_partitions(vnode_t *node)
         {
                 if (parts[i].type == 0x0C) // FAT32/LBA
                 {
-                        kprint(" [krnl] found fat32 / lba partition\r\n");
+                        LOG(" [part] found fat32 / lba partition\r\n");
                         size_t size = strnlen(node->name, 256);
                         char *clone = kmalloc(size + 8);
                         memcpy(clone, node->name, size);

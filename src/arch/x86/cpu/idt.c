@@ -1,6 +1,7 @@
 #include <cpu/idt.h>
 #include <interrupts/sys.h>
 #include <cpu/cpu.h>
+#include <dbg.h>
 
 static idt_entry_t idt[256];
 static idtp_t idtp;
@@ -59,5 +60,6 @@ void idt_init(void)
         outb(0xA1, 0x01);
         outb(0x21, 0xFA);
         outb(0xA1, 0x3F);
+        LOG(" [idt] OK\r\n");
 }
 

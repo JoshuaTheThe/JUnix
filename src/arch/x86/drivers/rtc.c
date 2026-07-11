@@ -4,6 +4,7 @@
 #include <panic.h>
 #include <math.h>
 #include <string.h>
+#include <dbg.h>
 
 static uint8_t bcd2Bin(uint8_t bcd)
 {
@@ -46,4 +47,5 @@ void rtcInit(void)
 {
         vnode_t *node = vfs_create("/dev", "rtc", 0);
         node->ops = &fil;
+        LOG(" [rtc] initialised at %x\r\n", node);
 }

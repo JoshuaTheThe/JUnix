@@ -1,5 +1,6 @@
 #include <cpu/gdt.h>
 #include <string.h>
+#include <dbg.h>
 
 static gdtEntry_t gdt[GDT_SIZE];
 static gdtTssEntry_t tss;
@@ -60,4 +61,5 @@ void gdt_init(void)
             :
             :
             : "memory", "eax");
+        LOG(" [gdt] OK\r\n");
 }

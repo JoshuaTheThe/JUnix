@@ -4,6 +4,7 @@
 #include <drivers/kprint.h>
 #include <mm/alloc.h>
 #include <string.h>
+#include <dbg.h>
 
 struct private
 {
@@ -243,7 +244,7 @@ static int iterate_directory(fat_bpb_t *bt, uint32_t dir, file_t *file, int (*ca
                                         continue;
                                 if (dir[i].flags == FAT_LONG_FILE_NAME)
                                 {
-                                        kprint(" [krnl] error: <long file name>s are not supported\r\n");
+                                        LOG(" [krnl] error: <long file name>s are not supported\r\n");
                                         continue;
                                 }
                                 if (dir[i].flags & FAT_VOLUME_ID)
@@ -416,25 +417,25 @@ static int mount(vnode_t *node, vnode_t *in)
         node->private = priv;
         if (priv->type != FAT_32)
         {
-                kprint(" [krnl] error: fat of type %d provided, only supports fat32, dumping bt\r\n", priv->type);
+                LOG(" [krnl] error: fat of type %d provided, only supports fat32, dumping bt\r\n", priv->type);
                 dump(&priv->bpb, 512);
-                kprint("._0XEBXX90: [%x, %x, %x]\r\n",
+                LOG("._0XEBXX90: [%x, %x, %x]\r\n",
                         priv->bpb._0XEBXX90[0] & 255,
                         priv->bpb._0XEBXX90[1] & 255,
                         priv->bpb._0XEBXX90[2] & 255);
-                kprint(".OEM: \"%s\"\r\n", priv->bpb.OEM);
-                kprint(".sector_size: %d\r\n", priv->bpb.sector_size);
-                kprint(".cluster_size: %d\r\n", priv->bpb.cluster_size);
-                kprint(".reserved_sectors: %d\r\n", priv->bpb.reserved_sectors);
-                kprint(".number_of_fats: %d\r\n", priv->bpb.number_of_fats);
-                kprint(".root_dir_entries: %d\r\n", priv->bpb.root_dir_entries);
-                kprint(".short_sector_count: %d\r\n", priv->bpb.short_sector_count);
-                kprint(".type: %d\r\n", priv->bpb.type);
-                kprint(".sectors_per_fat: %d\r\n", priv->bpb.sectors_per_fat);
-                kprint(".sectors_per_track: %d\r\n", priv->bpb.sectors_per_track);
-                kprint(".head_count: %d\r\n", priv->bpb.head_count);
-                kprint(".hidden: %d\r\n", priv->bpb.hidden);
-                kprint(".long_sector_count: %d\r\n", priv->bpb.long_sector_count);
+                LOG(".OEM: \"%s\"\r\n", priv->bpb.OEM);
+                LOG(".sector_size: %d\r\n", priv->bpb.sector_size);
+                LOG(".cluster_size: %d\r\n", priv->bpb.cluster_size);
+                LOG(".reserved_sectors: %d\r\n", priv->bpb.reserved_sectors);
+                LOG(".number_of_fats: %d\r\n", priv->bpb.number_of_fats);
+                LOG(".root_dir_entries: %d\r\n", priv->bpb.root_dir_entries);
+                LOG(".short_sector_count: %d\r\n", priv->bpb.short_sector_count);
+                LOG(".type: %d\r\n", priv->bpb.type);
+                LOG(".sectors_per_fat: %d\r\n", priv->bpb.sectors_per_fat);
+                LOG(".sectors_per_track: %d\r\n", priv->bpb.sectors_per_track);
+                LOG(".head_count: %d\r\n", priv->bpb.head_count);
+                LOG(".hidden: %d\r\n", priv->bpb.hidden);
+                LOG(".long_sector_count: %d\r\n", priv->bpb.long_sector_count);
                 return -1;
         }
         (void)node;

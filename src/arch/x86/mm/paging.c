@@ -3,7 +3,7 @@
 #include <mm/pmm.h>
 #include <sched/core.h>
 #include <cpu/cpu.h>
-#include <drivers/kprint.h>
+#include <dbg.h>
 #include <string.h>
 
 static bool paging_active = false;
@@ -102,6 +102,7 @@ void paging_enable(void)
 
 void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
 {
+        LOG(" [mm] mapping virt %x to phys %x\r\n", virt, phys);
         uint32_t dir = PAGE_DIR_INDEX(virt);
         uint32_t tbl = PAGE_TAB_INDEX(virt);
 
@@ -176,9 +177,9 @@ void paging_unmap(uintptr_t virt)
         pde_t pde = active_task->pd->entries[dir];
         if (!(pde & PAGE_PRESENT))
                 return;
-        kprint(" [krnl] unmapping virt %x (%x)\r\n", virt, phys_to_virt(pde & ~0xFFF));
+        LOG(" [mm] unmapping virt %x (%x)\r\n", virt, phys_to_virt(pde & ~0xFFF));
         remove_mapping(virt);
-        //pmm_free((void *)virt_to_phys((void *)virt));
+        pmm_free((void *)virt_to_phys((void *)virt));
         page_table_t *pt = phys_to_virt(pde & ~0xFFF);
         pt->entries[tab] = 0;
         __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
@@ -198,6 +199,7 @@ void paging_init(void)
         /*
         * Identity map first 128 KiB (pmm bitmap)
         */
+        LOG(" [mm] identity mapping PMM bitmap\r\n");
         for (uintptr_t addr = 0;
              addr < 0x20000;
              addr += PAGE_SIZE)
@@ -208,6 +210,7 @@ void paging_init(void)
         /*
         * Identity map rest 15 MiB
         */
+        LOG(" [mm] identity mapping 0x100000-0x1000000, 15MiB\r\n");
         for (uintptr_t addr = 0x100000;
              addr < 0x01000000;
              addr += PAGE_SIZE)
@@ -218,11 +221,13 @@ void paging_init(void)
         /*
         * Load page directory
         */
+        LOG(" [mm] loading page dir\r\n");
         paging_switch(active_task->pd);
 
         /*
         * Enable paging
         */
+        LOG(" [mm] enabling paging...\r\n");
         paging_enable();
         paging_active = true;
 }

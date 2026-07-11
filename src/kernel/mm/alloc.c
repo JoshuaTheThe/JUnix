@@ -2,7 +2,7 @@
 #include <mm/alloc.h>
 #include <mm/paging.h>
 #include <mm/pmm.h>
-#include <drivers/kprint.h>
+#include <dbg.h>
 #include <string.h>
 #include <panic.h>
 
@@ -36,6 +36,8 @@ void vfree(uintptr_t v, size_t size)
 
 __attribute__((ownership_returns(__kmalloc))) void *__kmalloc(size_t size, const char *FILE, long LINE)
 {
+        (void)LINE;
+        (void)FILE;
         if (size == 0)
                 return NULL;
         size_t total = size + sizeof(block_header_t);
@@ -75,15 +77,17 @@ __attribute__((ownership_returns(__kmalloc))) void *__kmalloc(size_t size, const
                 size
         );
 
-        kprint(" [kmalloc] allocating %x[%d] %s:%d\r\n", virt + sizeof(block_header_t), size, FILE, LINE);
+        LOG(" [kmalloc] allocating %x[%d] %s:%d\r\n", virt + sizeof(block_header_t), size, FILE, LINE);
         return (void *)(virt + sizeof(block_header_t));
 }
 
 __attribute__((ownership_takes(__kmalloc, 1))) void __kfree(void *ptr, const char *FILE, long LINE)
 {
+        (void)LINE;
+        (void)FILE;
         if (!ptr)
                 return;
-        kprint(" [kfree] freeing %x %s:%d\r\n", ptr, FILE, LINE);
+        LOG(" [kfree] freeing %x %s:%d\r\n", ptr, FILE, LINE);
         block_header_t *header =
         (block_header_t *)((uintptr_t)ptr - sizeof(block_header_t));
         uintptr_t virt = (uintptr_t)header;

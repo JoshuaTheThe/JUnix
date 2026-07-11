@@ -6,6 +6,7 @@
 #include <panic.h>
 #include <math.h>
 #include <mm/paging.h>
+#include <dbg.h>
 
 pci_device_t devices[MAX_DEVICES];
 uint32_t device_count = 0;
@@ -498,20 +499,20 @@ void pciDisplayDeviceInfo(pci_device_t *dev)
 {
         const char *className = pciClassToString(dev->class_id, dev->subclass_id);
 
-        kprint(" [krnl] PCI Device @ Bus %d, Slot %d, Function %d\r\n", dev->bus, dev->slot, dev->function);
-        kprint(" [krnl]   Vendor ID: 0x%x\r\n", dev->vendor_id);
-        kprint(" [krnl]   Device ID: 0x%x\r\n", dev->device_id);
-        kprint(" [krnl]   Class: 0x%x (%s)\r\n", dev->class_id, className);
-        kprint(" [krnl]   Subclass: 0x%x\r\n", dev->subclass_id);
-        kprint(" [krnl]   Programming Interface: 0x%x\r\n", dev->prog_if);
-        kprint(" [krnl]   Revision: 0x%x\r\n", dev->revision);
-        kprint(" [krnl]   Header Type: 0x%x\r\n", dev->header_type);
-        kprint(" [krnl]   IRQ Line: %d\r\n", dev->irq_line);
+        LOG(" [pci] PCI Device @ Bus %d, Slot %d, Function %d\r\n", dev->bus, dev->slot, dev->function);
+        LOG(" [pci]   Vendor ID: 0x%x\r\n", dev->vendor_id);
+        LOG(" [pci]   Device ID: 0x%x\r\n", dev->device_id);
+        LOG(" [pci]   Class: 0x%x (%s)\r\n", dev->class_id, className);
+        LOG(" [pci]   Subclass: 0x%x\r\n", dev->subclass_id);
+        LOG(" [pci]   Programming Interface: 0x%x\r\n", dev->prog_if);
+        LOG(" [pci]   Revision: 0x%x\r\n", dev->revision);
+        LOG(" [pci]   Header Type: 0x%x\r\n", dev->header_type);
+        LOG(" [pci]   IRQ Line: %d\r\n", dev->irq_line);
 
         for (int i = 0; i < 6; i++)
         {
                 if (dev->bar[i])
-                        kprint(" [krnl] BAR[%d]: 0x%x\r\n", i, dev->bar[i]);
+                        LOG(" [pci] BAR[%d]: 0x%x\r\n", i, dev->bar[i]);
         }
 }
 
@@ -534,7 +535,7 @@ void pciRegister(pci_device_t *dev)
         pciDisplayDeviceInfo(dev);
         const char *className = pciClassToString(dev->class_id, dev->subclass_id);
         devices[device_count++] = *dev;
-        kprint(" [krnl] Registered Device of class %s on irq %d\r\n", className, dev->irq_line);
+        LOG(" [pci] Registered Device of class %s on irq %d\r\n", className, dev->irq_line);
         for (int i = 0; i < 6; i++)
         {
                 uint32_t bar = dev->bar[i];
@@ -547,7 +548,7 @@ void pciRegister(pci_device_t *dev)
                 size_t size = pciGetBARSize(dev, i);
                 for (uintptr_t off = 0; off < size; off += PAGE_SIZE)
                         paging_map(phys + off, phys + off, PAGE_WRITE);
-                kprint(" [krnl] Registering BAR%d, ((char *)0x%x)[%d]\r\n", i, dev->bar[i], size);
+                LOG(" [pci] Registering BAR%d, ((char *)0x%x)[%d]\r\n", i, dev->bar[i], size);
         }
 
         vnode_t *node = vfs_create("/dev/pci",

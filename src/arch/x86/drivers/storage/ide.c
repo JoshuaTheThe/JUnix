@@ -147,10 +147,10 @@ uint8_t IDEPrintErr(uint32_t drive, uint8_t err)
         if (err == 0)
                 return err;
 
-        kprint(" [err] IDE: ");
+        LOG(" [err] IDE: ");
         if (err == 1)
         {
-                kprint("- Device Fault\r\n");
+                LOG("- Device Fault\r\n");
                 err = 19;
         }
         else if (err == 2)
@@ -158,56 +158,56 @@ uint8_t IDEPrintErr(uint32_t drive, uint8_t err)
                 uint8_t st = IDERead(IDEState.IDEDev[drive].Channel, ATA_REG_ERROR);
                 if (st & ATA_ER_AMNF)
                 {
-                        kprint("- No Address Mark Found");
+                        LOG("- No Address Mark Found");
                         err = 7;
                 }
                 if (st & ATA_ER_TK0NF)
                 {
-                        kprint("- No Media or Media Error");
+                        LOG("- No Media or Media Error");
                         err = 3;
                 }
                 if (st & ATA_ER_ABRT)
                 {
-                        kprint("- Command Aborted");
+                        LOG("- Command Aborted");
                         err = 20;
                 }
                 if (st & ATA_ER_MCR)
                 {
-                        kprint("- No Media or Media Error");
+                        LOG("- No Media or Media Error");
                         err = 3;
                 }
                 if (st & ATA_ER_IDNF)
                 {
-                        kprint("- ID mark not Found");
+                        LOG("- ID mark not Found");
                         err = 21;
                 }
                 if (st & ATA_ER_MC)
                 {
-                        kprint("- No Media or Media Error");
+                        LOG("- No Media or Media Error");
                         err = 3;
                 }
                 if (st & ATA_ER_UNC)
                 {
-                        kprint("- Uncorrectable Data Error");
+                        LOG("- Uncorrectable Data Error");
                         err = 22;
                 }
                 if (st & ATA_ER_BBK)
                 {
-                        kprint("- Bad Sectors");
+                        LOG("- Bad Sectors");
                         err = 13;
                 }
         }
         else if (err == 3)
         {
-                kprint("- Reads Nothing");
+                LOG("- Reads Nothing");
                 err = 23;
         }
         else if (err == 4)
         {
-                kprint("- Write Protected");
+                LOG("- Write Protected");
                 err = 8;
         }
-        kprint(" - [%s %s] %s\r\n",
+        LOG(" - [%s %s] %s\r\n",
                (const char *[]){"Primary", "Secondary"}[IDEState.IDEDev[drive].Channel],
                (const char *[]){"Master", "Slave"}[IDEState.IDEDev[drive].Drive],
                IDEState.IDEDev[drive].Model);
@@ -248,10 +248,10 @@ void IDEInitialise(void)
         IDEState.Channels[ATA_SECONDARY].ctrl = (IDEState.Dev->bar[3] & 0xFFFFFFFC) + 0x376 * (!IDEState.Dev->bar[3]);
         IDEState.Channels[ATA_PRIMARY].bmide = (IDEState.Dev->bar[4] & 0xFFFFFFFC) + 0;   // Bus Master IDE
         IDEState.Channels[ATA_SECONDARY].bmide = (IDEState.Dev->bar[4] & 0xFFFFFFFC) + 8; // Bus Master IDE
-        kprint(" [krnl] IDE Channels Set\r\n");
+        LOG(" [ide] IDE Channels Set\r\n");
         IDEWrite(ATA_PRIMARY, ATA_REG_CONTROL, 0x02);
         IDEWrite(ATA_SECONDARY, ATA_REG_CONTROL, 0x02);
-        kprint(" [krnl] IDE IRQs Disabled\r\n");
+        LOG(" [ide] IDE IRQs Disabled\r\n");
         for (int i = 0; i < 2; i++)
                 for (int j = 0; j < 2; j++)
                 {
@@ -333,7 +333,7 @@ void IDEInitialise(void)
         for (int i = 0; i < 4; i++)
                 if (IDEState.IDEDev[i].Reserved == 1)
                 {
-                        kprint(" [krnl] Found %s Drive %d - %s\r\n",
+                        LOG(" [ide] Found %s Drive %d - %s\r\n",
                                (const char *[]){"ATA", "ATAPI"}[IDEState.IDEDev[i].Type],
                                IDEState.IDEDev[i].Size,
                                IDEState.IDEDev[i].Model);
@@ -567,10 +567,10 @@ void IDEFind(size_t Index)
         IDEState.Dev = pciGetOriginalDevice(Index);
         if (!IDEState.Dev || IDEState.Dev->class_id != 0x01 || IDEState.Dev->subclass_id != 0x01)
         {
-                kprint(" [err] Could not find IDE Device\r\n");
+                LOG(" [err] Could not find IDE Device\r\n");
                 return;
         }
 
-        kprint(" [krnl] IDE Device found\r\n");
+        LOG(" [ide] IDE Device found\r\n");
         IDEInitialise();
 }

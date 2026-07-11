@@ -4,7 +4,7 @@
 #include <mm/alloc.h>
 #include <panic.h>
 #include <fs/ramfs/ramfs.h>
-#include <drivers/kprint.h>
+#include <dbg.h>
 
 vnode_t *root_vnode = NULL;
 
@@ -21,7 +21,7 @@ int vfs_init(void)
         ramfs = ramfs_create_fs();
         if (vfs_mount("/", &ramfs, NULL) != 0)
         {
-                kprint(" [krnl] could not create ramfs\r\n");
+                LOG(" [krnl] could not create ramfs\r\n");
                 panic(PANIC_TODO);
         }
         return 0;
@@ -225,7 +225,7 @@ vnode_t *vfs_create(char *parent_path, char *name, int flags)
         vnode_t *p;
         if (vfs_lookup(parent_path, &p) < 0)
         {
-                kprint(" [krnl] could not find file: %s\r\n", parent_path);
+                LOG(" [krnl] could not find file: %s\r\n", parent_path);
                 panic(PANIC_TODO);
         }
 

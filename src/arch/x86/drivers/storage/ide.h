@@ -2,9 +2,9 @@
 #define IDE_H
 
 #include <drivers/pci.h>
-#include <drivers/kprint.h>
 #include <interrupts/timer.h>
 #include <cpu/io.h>
+#include <dbg.h>
 
 #define ATA_SR_BSY 0x80  // Busy
 #define ATA_SR_DRDY 0x40 // Drive ready

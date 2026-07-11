@@ -1,7 +1,7 @@
 #include <cpu/features/feature.h>
 #include <cpu/features/sse.h>
-#include <drivers/kprint.h>
 #include <panic.h>
+#include <dbg.h>
 
 char fxsave_region[512] __attribute__((aligned(16))) = {0};
 
@@ -93,7 +93,7 @@ char *FeatureName(size_t Index)
 
 void FeaturesInit(void)
 {
-        kprint(" [krnl] Finding Features\r\n");
+        LOG(" [cpu] Finding Features\r\n");
         for (size_t i = 0; i < 64; ++i)
         {
                 size_t index = i & 31;
@@ -101,7 +101,7 @@ void FeaturesInit(void)
                 if (Features[i])
                 {
                         const char *const name = FeatureName(i);
-                        kprint(" [krnl] Feature %s\r\n", name);
+                        LOG(" [cpu] Feature %s\r\n", name);
                 }
         }
 
@@ -109,30 +109,30 @@ void FeaturesInit(void)
         bool SSEPresent = SSEIsAvailable();
         if (SSEPresent) /* if SSE(2) && FPU */
         {
-                kprint(" [krnl] SSE Is available, attempting to enable\r\n");
+                LOG(" [cpu] SSE Is available, attempting to enable\r\n");
                 SSEEnable();
                 __asm volatile(" fxsave %0 " ::"m"(fxsave_region));
-                kprint(" [krnl] SSE Is enabled\r\n");
+                LOG(" [cpu] SSE Is enabled\r\n");
         }
         else
         {
-                kprint(" [krnl!] SSE is not available\r\n");
+                LOG(" [cpu!] SSE is not available\r\n");
                 panic(PANIC_REQUIRED_FEATURE);
         }
 
         if (Features[2])
         {
-                kprint(" [krnl] DE Is available\r\n");
+                LOG(" [cpu] DE Is available\r\n");
                 FeatureCR4Enable(3);
         }
 
         if (Features[5])
         {
-                kprint(" [krnl] MSR Is available\r\n");
+                LOG(" [cpu] MSR Is available\r\n");
         }
         else
         {
-                kprint(" [krnl!] MSR is not available\r\n");
+                LOG(" [cpu!] MSR is not available\r\n");
                 panic(PANIC_REQUIRED_FEATURE);
         }
 }

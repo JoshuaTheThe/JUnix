@@ -1,7 +1,7 @@
 #include <interrupts/timer.h>
 #include <cpu/io.h>
 #include <cpu/cpu.h>
-#include <drivers/kprint.h>
+#include <dbg.h>
 #include <panic.h>
 
 extern volatile unsigned long ticks_since_boot;
@@ -26,19 +26,19 @@ void timer_init(unsigned int targetFreq)
 {
         if (targetFreq == 0)
         {
-                kprint(" [krnl!] PIT: targetFreq cannot be 0\r\n");
+                LOG(" [pit] targetFreq cannot be 0\r\n");
                 panic(PANIC_DIVIDE_BY_ZERO);
                 return;
         }
     
         if (targetFreq > 1193180)
         {
-                kprint(" [krnl!] PIT: targetFreq %d too high (max 1193180)\r\n", targetFreq);
+                LOG(" [pit] targetFreq %d too high (max 1193180)\r\n", targetFreq);
                 targetFreq = 1193180;
         }
         if (targetFreq < 18)
         {
-                kprint(" [krnl!] PIT: targetFreq %d too low (min ~18)\r\n", targetFreq);
+                LOG(" [pit] targetFreq %d too low (min ~18)\r\n", targetFreq);
                 targetFreq = 18;
         }
     
@@ -46,14 +46,14 @@ void timer_init(unsigned int targetFreq)
         if (divisor > 0xFFFF)
         {
                 divisor = 0xFFFF;
-                kprint(" [krnl] PIT: Adjusted divisor to 0xFFFF\r\n");
+                LOG(" [pit] Adjusted divisor to 0xFFFF\r\n");
         }
         if (divisor < 1)
         {
                 divisor = 1;
-                kprint(" [krnl] PIT: Adjusted divisor to 1\r\n");
+                LOG(" [pit] Adjusted divisor to 1\r\n");
         }
-        kprint(" [krnl] PIT: Frequency %d Hz, divisor %d\r\n", targetFreq, divisor);
+        LOG(" [pit] Frequency %d Hz, divisor %d\r\n", targetFreq, divisor);
         outb(PIT_COMMAND, 0x36);
         outb(PIT_CHANNEL0, divisor & 0xFF);
         outb(PIT_CHANNEL0, (divisor >> 8) & 0xFF);

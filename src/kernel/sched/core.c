@@ -4,7 +4,7 @@
 #include <panic.h>
 #include <string.h>
 #include <mm/alloc.h>
-#include <drivers/kprint.h>
+#include <dbg.h>
 #include <cpu/cpu.h>
 
 task_state_registers_t scratch_proc = {0};
@@ -145,7 +145,7 @@ vnode_t *scheduler_add_process(task_state_registers_t initial_regs, char *name)
         vnode_t *vn = vfs_mkdir(proc, name, VFS_DIRECTORY);
         not_optional(vn);
         vn->private = task;
-        kprint(" [krnl] created process %s (%d)\r\n", vn->name, task->pid);
+        LOG(" [krnl] created process %s (%d)\r\n", vn->name, task->pid);
         return vn;
 }
 
@@ -176,7 +176,7 @@ void scheduler_init(void)
         }
 
         vfs_mount("/proc", &fs, NULL);
-        kprint(" [krnl] scheduler started\r\n");
+        LOG(" [krnl] scheduler started\r\n");
 }
 
 vnode_t *scheduler_find_process(pid_t pid)

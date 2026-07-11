@@ -3,8 +3,8 @@
 #include <stddef.h>
 #include <mm/alloc.h>
 #include <panic.h>
-#include <drivers/kprint.h>
 #include <string.h>
+#include <dbg.h>
 
 struct multiboot_tag
 {
@@ -119,7 +119,7 @@ void fb_init(int magic, uintptr_t addr)
 
                 if (tag->type == 0)
                         break;
-                kprint(" [krnl] tag type: %d\r\n", tag->type);
+                LOG(" [fb] tag type: %d\r\n", tag->type);
                 if (tag->type == 8)
                 {
                         struct multiboot_tag_framebuffer *_fb = 
@@ -145,11 +145,13 @@ void fb_init(int magic, uintptr_t addr)
                         vnode_t *info_vn = vfs_create("/dev", "fb-info", 0);
                         info_vn->ops = &fb_info_ops;
                         info_vn->private = fb;
-                        kprint(" [krnl] Framebuffer initialized: %dx%d@%d bpp, base=0x%x\r\n",
+                        LOG(" [fb] Framebuffer initialized: %dx%d@%d bpp, base=0x%x\r\n",
                                width, height, bpp, base);
                         break;
                 }
 
                 offset += (tag->size + 7) & ~7;
         }
+
+        LOG(" [fb] OK");
 }

@@ -18,6 +18,7 @@
 #include <drivers/rtc.h>
 #include <fs/fat/fat.h>
 #include <elf.h>
+#include <dbg.h>
 
 void init(int m, uintptr_t a)
 {
@@ -48,7 +49,7 @@ void init(int m, uintptr_t a)
                         {
                                 if (IDEState.IDEDev[d].Reserved != 1)
                                         continue;
-                                kprint(" [krnl] model=%s type=%d size=%dMB\r\n", IDEState.IDEDev[d].Model, IDEState.IDEDev[d].Type, (IDEState.IDEDev[d].Size * 512) / 1024 / 1024);
+                                LOG(" [krnl] model=%s type=%d size=%dMB\r\n", IDEState.IDEDev[d].Model, IDEState.IDEDev[d].Type, (IDEState.IDEDev[d].Size * 512) / 1024 / 1024);
                         }
                 }
         }
@@ -63,18 +64,18 @@ void init(int m, uintptr_t a)
         file_t *rtc;
         if (vfs_open("/dev/rtc", &rtc) < 0)
         {
-                kprint(" [krnl] no rtc present!\r\n");
+                LOG(" [krnl] no rtc present!\r\n");
                 return;
         }
 
         rtcTime_t time;
         if ((size_t)vfs_read(rtc, &time, sizeof(time)) < sizeof(time))
         {
-                kprint(" [krnl] failed to read the rtc\r\n");
+                LOG(" [krnl] failed to read the rtc\r\n");
                 return;
         }
 
-        kprint(" [krnl] time is: %d/%d/%d %d:%d:%d\r\n",
+        LOG(" [krnl] time is: %d/%d/%d %d:%d:%d\r\n",
                 time.day,
                 time.month,
                 time.year,
