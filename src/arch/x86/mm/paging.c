@@ -104,35 +104,51 @@ void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
 {
         uint32_t dir = PAGE_DIR_INDEX(virt);
         uint32_t tbl = PAGE_TAB_INDEX(virt);
+
+        page_table_t *new_pt = NULL;
+
         if (!(active_task->pd->entries[dir] & PAGE_PRESENT))
         {
-                page_table_t *pt = pmm_alloc();
-                memset(pt, 0, PAGE_SIZE);
-                uintptr_t pt_phys = virt_to_phys(pt);
+                new_pt = pmm_alloc();
+                memset(new_pt, 0, PAGE_SIZE);
+        }
+
+        uint32_t flags_saved = save_flags();
+        cpu_di();
+
+        if (new_pt)
+        {
+                uintptr_t pt_phys = virt_to_phys(new_pt);
+
                 active_task->pd->entries[dir] =
                         pt_phys |
                         PAGE_PRESENT |
                         PAGE_WRITE;
+
                 mapping_t *m =
-                        &active_task->mappings.items[active_task->mappings.count++];
-                        m->phys = pt_phys & ~0xFFF;
-                        m->virt = (uintptr_t)pt & ~0xFFF;
+                    &active_task->mappings.items[active_task->mappings.count++];
+
+                m->phys = pt_phys & ~0xFFF;
+                m->virt = (uintptr_t)new_pt & ~0xFFF;
         }
 
         page_table_t *pt =
                 phys_to_virt(active_task->pd->entries[dir] & ~0xFFF);
+
         pt->entries[tbl] =
                 (phys & ~0xFFF) |
                 flags |
                 PAGE_PRESENT;
-        phys &= ~0xFFF;
-        virt &= ~0xFFF;
 
         mapping_t *m =
             &active_task->mappings.items[active_task->mappings.count++];
-        m->phys = phys;
-        m->virt = virt;
+
+        m->phys = phys & ~0xFFF;
+        m->virt = virt & ~0xFFF;
+
         __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
+
+        restore_flags(flags_saved);
 }
 
 bool remove_mapping(uintptr_t phys)
