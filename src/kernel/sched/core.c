@@ -11,6 +11,9 @@ uint32_t ticks_since_boot = 0;
 
 vnode_t *proc = NULL, *current_process_fil = NULL, *override_next = NULL;
 
+task_t  early_task  = {0};
+task_t *active_task;
+
 int task_open(task_t *task, char *path, int flags, int mode)
 {
         (void)flags;
@@ -117,6 +120,7 @@ void scheduler_next(void)
                 }
         }
 
+        active_task = current_process_fil->private;
         ackint();
 }
 
@@ -149,6 +153,8 @@ int scheduler_mount(vnode_t *node, void *data) // not allowed to unmount
         (void)data;
         node->ops = &ops;
         current_process_fil = scheduler_add_process((task_state_registers_t){0}, "krnl");
+        *((task_t *)current_process_fil->private) = early_task;
+        active_task = current_process_fil->private;
         return 0;
 }
 

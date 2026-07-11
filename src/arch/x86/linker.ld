@@ -97,6 +97,6 @@ SECTIONS
                 *(.comment.*)
         }
 
-        . = ALIGN(4096);
-        MemoryStart = .;
+        mem_start   = 0x01000000;
+        page_bitmap = 0x1000;
 }

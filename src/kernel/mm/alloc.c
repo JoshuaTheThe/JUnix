@@ -1,49 +1,96 @@
 
 #include <mm/alloc.h>
-#include <panic.h>
+#include <mm/paging.h>
+#include <mm/pmm.h>
 #include <string.h>
+#include <panic.h>
 
-void *kmalloc(size_t siz)
+typedef struct
 {
-        if (siz == 0)
-                return NULL;
-        size_t total = siz + sizeof(block_header_t);
-        size_t PagesNeeded = (total + PAGE_SIZE - 1) / PAGE_SIZE;
-        void *base = pagealloc(); // warning - currently unsafe due to memory fragmentation, will be replaced with virtual handler in future
-        if (!base)
-        {
-                panic(PANIC_RAN_OUT_OF_MEMORY);
-        }
+        size_t size;
+        size_t pages;
+} block_header_t;
 
-        block_header_t *Header = (block_header_t *)base;
-        Header->siz = total;
-        Header->nxt = NULL;
-        for (size_t i = 1; i < PagesNeeded; ++i)
-        {
-                void *nxtPage = pagealloc();
-                if (!nxtPage)
-                {
-                        for (size_t j = 0; j < i; ++j)
-                        {
-                                pagealloc_free((char *)base + j * PAGE_SIZE);
-                        }
-                        panic(PANIC_RAN_OUT_OF_MEMORY);
-                }
-        }
+#define KHEAP_START 0xD0000000
+#define KHEAP_END   0xE0000000
 
-        memset(base, 0, siz);
-        return (char *)base + sizeof(block_header_t);
+static uintptr_t heap_next = KHEAP_START;
+
+uintptr_t vmalloc(size_t size)
+{
+        size = (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+        uintptr_t addr = heap_next;
+        heap_next += size;
+        if (heap_next >= KHEAP_END)
+                return 0;
+        return addr;
 }
 
-void kfree(void *base)
+void vfree(uintptr_t v, size_t size)
 {
-        not_optional(base);
-        block_header_t *Header = (block_header_t *)((char *)base - sizeof(block_header_t));
-        size_t total = Header->siz;
-        size_t used = (total + PAGE_SIZE - 1) / PAGE_SIZE;
-        void *start = (char *)base - sizeof(block_header_t);
-        for (size_t i = 0; i < used; ++i)
+        (void)v;
+        (void)size;
+        return;
+}
+
+void *kmalloc(size_t size)
+{
+        if (size == 0)
+                return NULL;
+        size_t total = size + sizeof(block_header_t);
+        size_t pages = (total + PAGE_SIZE - 1) / PAGE_SIZE;
+        uintptr_t virt = vmalloc(pages * PAGE_SIZE);
+        if (!virt)
+                panic(PANIC_RAN_OUT_OF_MEMORY);
+        for (size_t i = 0; i < pages; i++)
         {
-                pagealloc_free((char *)start + i * PAGE_SIZE);
+                uintptr_t phys = (uintptr_t)pmm_alloc();
+                if (!phys)
+                {
+                        for (size_t j = 0; j < i; j++)
+                        {
+                                uintptr_t old_phys =
+                                        virt_to_phys((void *)(virt + j * PAGE_SIZE));
+                                paging_unmap(virt + j * PAGE_SIZE);
+                                pmm_free((void *)old_phys);
+                        }
+
+                        panic(PANIC_RAN_OUT_OF_MEMORY);
+                }
+
+                paging_map(
+                        virt + i * PAGE_SIZE,
+                        phys,
+                        PAGE_PRESENT | PAGE_WRITE
+                );
         }
+
+        block_header_t *header = (void *)virt;
+        header->size = size;
+        header->pages = pages;
+        memset(
+                (void *)(virt + sizeof(block_header_t)),
+                0,
+                size
+        );
+
+        return (void *)(virt + sizeof(block_header_t));
+}
+
+void kfree(void *ptr)
+{
+        if (!ptr)
+                return;
+        block_header_t *header =
+                (block_header_t *)((uintptr_t)ptr - sizeof(block_header_t));
+        uintptr_t virt = (uintptr_t)header;
+        for (size_t i = 0; i < header->pages; i++)
+        {
+                uintptr_t page = virt + i * PAGE_SIZE;
+                uintptr_t phys = virt_to_phys((void *)page);
+                paging_unmap(page);
+                pmm_free((void *)phys);
+        }
+
+        vfree(virt, header->pages * PAGE_SIZE);
 }

@@ -7,7 +7,7 @@
 #include <fs/null.h>
 #include <fs/random.h>
 #include <fs/ramfs/ramfs.h>
-#include <mm/bitmap.h>
+#include <mm/pmm.h>
 #include <mm/alloc.h>
 #include <string.h>
 #include <panic.h>
@@ -22,11 +22,11 @@
 void init(int m, uintptr_t a)
 {
         cpu_di();
+        cpu_init();
         if (vfs_init() != 0 || vfs_init_dev_mnt() != 0)
                 panic(PANIC_TODO);
-        cpu_init();
-        serial_init();
         scheduler_init();
+        serial_init();
         fb_init(m,a);
         rtcInit();
 

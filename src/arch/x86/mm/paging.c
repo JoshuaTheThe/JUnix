@@ -1,0 +1,171 @@
+
+#include <mm/paging.h>
+#include <mm/pmm.h>
+#include <sched/core.h>
+#include <string.h>
+
+static bool identity = true;
+
+uintptr_t virt_to_phys(void *ptr)
+{
+        if (identity)
+                return (uintptr_t)ptr;
+        uintptr_t virt = (uintptr_t)ptr;
+
+        uint32_t dir = PAGE_DIR_INDEX(virt);
+        uint32_t tab = PAGE_TAB_INDEX(virt);
+
+        pde_t pde = active_task->pd->entries[dir];
+
+        if (!(pde & PAGE_PRESENT))
+                return 0;
+
+        page_table_t *pt =
+        (page_table_t *)(pde & ~0xFFF);
+
+        pte_t pte = pt->entries[tab];
+
+        if (!(pte & PAGE_PRESENT))
+                return 0;
+
+        return (pte & ~0xFFF) + PAGE_OFFSET(virt);
+}
+
+void *phys_to_virt(uintptr_t addr)
+{
+        return (void *)addr;
+}
+
+void paging_switch(page_directory_t *pd)
+{
+        uintptr_t phys = virt_to_phys(pd);
+        __asm volatile(
+                "mov %0, %%cr3"
+                :
+                : "r"(phys)
+                : "memory"
+        );
+}
+
+void paging_disable(void)
+{
+        uint32_t cr0;
+        __asm volatile(
+                "mov %%cr0, %0"
+                : "=r"(cr0)
+        );
+
+        cr0 &= ~0x80000000; // CR0.PG
+        __asm volatile(
+                "mov %0, %%cr0"
+                :
+                : "r"(cr0)
+                : "memory"
+        );
+}
+
+void paging_enable(void)
+{
+        uint32_t cr0;
+
+        __asm volatile(
+                "mov %%cr0, %0"
+                : "=r"(cr0)
+        );
+
+        cr0 |= 0x80000000; // CR0.PG
+        __asm volatile(
+                "mov %0, %%cr0"
+                :
+                : "r"(cr0)
+                : "memory"
+        );
+}
+
+void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
+{
+        uint32_t dir = PAGE_DIR_INDEX(virt);
+        uint32_t tbl = PAGE_TAB_INDEX(virt);
+        if (!(active_task->pd->entries[dir] & PAGE_PRESENT))
+        {
+                page_table_t *pt = pmm_alloc();
+                memset(pt, 0, PAGE_SIZE);
+                active_task->pd->entries[dir] =
+                    virt_to_phys(pt) |
+                        PAGE_PRESENT |
+                        PAGE_WRITE;
+        }
+
+        page_table_t *pt =
+                phys_to_virt(active_task->pd->entries[dir] & ~0xFFF);
+        pt->entries[tbl] =
+                (phys & ~0xFFF) |
+                flags |
+                PAGE_PRESENT;
+}
+
+bool remove_mapping(uintptr_t phys)
+{
+        phys &= ~0xFFF;
+        for (size_t i = 0; i < active_task->mappings.count; i++)
+        {
+                if (active_task->mappings.items[i].phys == phys)
+                {
+                        // Move the last entry over this one
+                        active_task->mappings.items[i] = active_task->mappings.items[active_task->mappings.count];
+                        active_task->mappings.count--;
+                        return true;
+                }
+        }
+
+        return false;
+}
+
+void paging_unmap(uintptr_t virt)
+{
+        uint32_t dir = PAGE_DIR_INDEX(virt);
+        uint32_t tab = PAGE_TAB_INDEX(virt);
+
+        pde_t pde = active_task->pd->entries[dir];
+        if (!(pde & PAGE_PRESENT))
+                return;
+
+        page_table_t *pt = phys_to_virt(pde & ~0xFFF);
+
+        pt->entries[tab] = 0;
+
+        __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
+        remove_mapping(virt);
+
+        // TODO - move this to pmm (ref count the pmm)
+        pmm_free((void *)virt_to_phys((void *)virt));
+}
+
+void paging_init(void)
+{
+        active_task = &early_task;
+        paging_disable();
+        active_task->pd = pmm_alloc();
+        memset(active_task->pd, 0, PAGE_SIZE);
+
+        /*
+        * Identity map first 64 MiB
+        */
+        for (uintptr_t addr = 0;
+             addr < 0x04000000;
+             addr += PAGE_SIZE)
+        {
+                paging_map(addr, addr, PAGE_WRITE);
+        }
+
+        /*
+        * Load page directory
+        */
+        paging_switch(active_task->pd);
+
+        /*
+        * Enable paging
+        */
+        paging_enable();
+        identity = false;
+}

@@ -5,6 +5,7 @@
 #include <sched/task.h>
 #include <sched/trap.h>
 #include <sched/user.h>
+#include <mm/paging.h>
 #include <fs/fs.h>
 
 typedef uint64_t pid_t;
@@ -23,15 +24,30 @@ typedef struct task_t
         struct
         {
                 file_t       **items; // if null, empty
+                size_t         count;
                 size_t         capacity;
         } fd;
 
         struct
         {
-                pid_t   *items; // yes
+                struct {
+                        pid_t pid;
+                        int type;
+                } *items; // yes
                 size_t   capacity;
+                size_t   count;
                 int      result;
         } waiting_for_me;
+
+        struct
+        {
+                mapping_t *items;
+                size_t     capacity;
+                size_t     count;
+                int        result;
+        } mappings;
+
+        page_directory_t *pd;
         
         // in future add things like page tabels and perms
         // this is ring0 for now
@@ -47,6 +63,9 @@ vnode_t *scheduler_find_process(pid_t pid);
 extern task_state_registers_t scratch_proc;
 extern vnode_t *override_next, *current_process_fil;
 extern uint32_t ticks_since_boot;
+
+extern task_t  early_task;
+extern task_t *active_task;
 
 #endif
 

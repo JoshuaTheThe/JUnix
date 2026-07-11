@@ -6,8 +6,10 @@
         .extern trap_next
         .extern sys_handler
         .extern IDEIrq
-timer_int:
 default_int:
+        cli
+        jmp default_int
+timer_int:
         cli
         jmp trap_next
 ide_int:

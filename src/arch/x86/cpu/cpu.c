@@ -7,10 +7,10 @@
 #include <panic.h>
 #include <boot/multiboot.h>
 #include <cpu/features/feature.h>
-#include <cpu/pde.h>
 #include <cpu/cpu.h>
 #include <string.h>
 #include <mm/alloc.h>
+#include <mm/paging.h>
 
 enum cpu_vendor
 {
@@ -29,7 +29,6 @@ static enum cpu_vendor cpu_get_raw_vendor(void)
                 return CPU_AMD;
         return CPU_UNKNOWN;
 }
-
 
 int32_t cpu_get_temp_mc(void)
 {
@@ -75,9 +74,8 @@ char *cpu_get_arch(void)
 
 void cpu_init(void)
 {
-        vfs_create("/dev", "cpu", VFS_DIRECTORY);
-        PDEInit();
         FeaturesInit();
+        paging_init();
         gdt_init();
         idt_init();
         timer_init(250);
