@@ -60,6 +60,8 @@ int search_for_partitions(vnode_t *node)
                         node->private   = part;
                 }
         }
+        
+        return 0;
 error:
         vfs_close(file);
         return -1;

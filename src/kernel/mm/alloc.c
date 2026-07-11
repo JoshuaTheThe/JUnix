@@ -34,7 +34,7 @@ void vfree(uintptr_t v, size_t size)
         return;
 }
 
-__attribute__((ownership_returns(kmalloc))) void *kmalloc(size_t size)
+__attribute__((ownership_returns(__kmalloc))) void *__kmalloc(size_t size, const char *FILE, long LINE)
 {
         if (size == 0)
                 return NULL;
@@ -75,14 +75,15 @@ __attribute__((ownership_returns(kmalloc))) void *kmalloc(size_t size)
                 size
         );
 
+        kprint(" [kmalloc] allocating %x[%d] %s:%d\r\n", virt + sizeof(block_header_t), size, FILE, LINE);
         return (void *)(virt + sizeof(block_header_t));
 }
 
-__attribute__((ownership_takes(kmalloc, 1))) void kfree(void *ptr)
+__attribute__((ownership_takes(__kmalloc, 1))) void __kfree(void *ptr, const char *FILE, long LINE)
 {
         if (!ptr)
                 return;
-        kprint(" [kfree] freeing %x\r\n", ptr);
+        kprint(" [kfree] freeing %x %s:%d\r\n", ptr, FILE, LINE);
         block_header_t *header =
         (block_header_t *)((uintptr_t)ptr - sizeof(block_header_t));
         uintptr_t virt = (uintptr_t)header;

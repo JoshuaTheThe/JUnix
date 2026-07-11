@@ -4,7 +4,10 @@
 
 #include <mm/pmm.h>
 
-__attribute__((ownership_returns(kmalloc), alloc_size(1)))  void *kmalloc(size_t siz);
-__attribute__((ownership_takes(kmalloc, 1)))                void kfree(void *base);
+#define kfree(p)   (__kfree(p, __FILE__, __LINE__))
+#define kmalloc(p) (__kmalloc(p, __FILE__, __LINE__))
+
+__attribute__((ownership_returns(__kmalloc), alloc_size(1)))  void *__kmalloc(size_t siz, const char *FILE, long LINE);
+__attribute__((ownership_takes(__kmalloc, 1)))                void __kfree(void *base, const char *FILE, long LINE);
 
 #endif
