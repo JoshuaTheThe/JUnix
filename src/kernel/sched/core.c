@@ -31,6 +31,8 @@ task_t *task_create(proc_t *proc)
                    KERNEL_STACK_VIRT + PAGE_SIZE * proc->taskcount++,
                    phys,
                    PAGE_PRESENT | PAGE_WRITE);
+        task->state = TASK_BLOCKED;
+        task->parent = proc;
         return task;
 }
 
@@ -96,6 +98,12 @@ void sched_next(void)
                         current_proc = processes;
                 current_task = &current_proc->tasks[0];
         }
+
+        if (current_task->state != TASK_RUNNING)
+        {
+                sched_next();
+        }
+        
         ackint();
 }
 
@@ -121,6 +129,7 @@ void sched_init(void)
         current_proc = kernel_proc = proc_create();
         kernel_proc->space = &kernel_address_space;
         current_task = kernel_task = task_create(kernel_proc);
+        kernel_task->state = TASK_RUNNING;
         LOG(" [proc] OK\r\n");
 }
 

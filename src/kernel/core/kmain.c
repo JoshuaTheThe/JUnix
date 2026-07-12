@@ -4,6 +4,14 @@
 #include <drivers/kprint.h>
 #include <interrupts/timer.h>
 #include <mm/alloc.h>
+#include <sched/core.h>
+
+void worker(void)
+{
+        kprint(" [worker] working..\r\n");
+        while(1)
+                ;
+}
 
 void kmain(void)
 {
@@ -16,5 +24,16 @@ void kmain(void)
         kprint("%s\r\n", buffer);
         kfree(buffer);
         close(fd);
+        task_t *task   = task_create(current_proc);
+        task->regs.eip = (uintptr_t)worker;
+        task->regs.esp = (uintptr_t)kmalloc(1024) + 1020; // whatever
+        task->regs.cs  = 0x8;
+        task->regs.ds  = 0x10;
+        task->regs.es  = 0x10;
+        task->regs.ss  = 0x10;
+        task->regs.fs  = 0x10;
+        task->regs.gs  = 0x10;
+        task->state    = TASK_RUNNING;
+        while(1);
         panic(PANIC_TODO);
 }

@@ -43,7 +43,6 @@ void sys_handler(void)
                 
                 case SYS_CLOSE:
                 {
-                        panic(PANIC_TODO);
                         // TODO! safety shit
                         proc_close(current_proc, regs->ebx);
                         break;
