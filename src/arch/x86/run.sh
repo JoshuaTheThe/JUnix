@@ -32,6 +32,10 @@ if grub-file --is-x86-multiboot2 bin/junix_x86.o; then
     
     sudo cp -r bin/isodir/* mnt/
     sudo cp -r src/misc/* mnt/
+
+    sudo mkdir -p mnt/src/arch/ mnt/src/kernel
+    sudo cp -r src/arch/* mnt/src/arch
+    sudo cp -r src/kernel/* mnt/src/kernel
     
     # Cleanup
     sudo umount mnt
@@ -40,7 +44,7 @@ if grub-file --is-x86-multiboot2 bin/junix_x86.o; then
     # Run QEMU with HDD
     qemu-system-x86_64 \
     -drive file=bin/junix_x86.hdd,if=ide,index=0,format=raw \
-    -m 64 \
+    -m 256 \
     -debugcon stdio \
     -no-reboot \
     -no-shutdown

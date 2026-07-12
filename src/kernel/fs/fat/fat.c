@@ -103,6 +103,7 @@ static uint32_t next_cluster_32(fat_bpb_t *bt, uint32_t cluster, file_t *file)
         return entry & 0x0FFFFFFF;
 }
 
+__attribute__((__used__))
 static uint16_t next_cluster_16(fat_bpb_t *bt, uint16_t cluster, file_t *file)
 {
         uint32_t fat_off  = cluster * 2;
@@ -115,6 +116,7 @@ static uint16_t next_cluster_16(fat_bpb_t *bt, uint16_t cluster, file_t *file)
         return *(uint16_t *)&sector[ent_off];
 }
 
+__attribute__((__used__))
 static uint16_t next_cluster_12(fat_bpb_t *bt, uint16_t cluster, file_t *file)
 {
         uint32_t fat_off  = cluster + (cluster / 2);
@@ -135,17 +137,7 @@ static uint16_t next_cluster_12(fat_bpb_t *bt, uint16_t cluster, file_t *file)
 
 static uint32_t next_cluster(fat_bpb_t *bt, uint32_t cluster, file_t *file)
 {
-        switch (((struct private *)file->vnode->private)->type)
-        {
-        case FAT_UNKNOWN:
-                return -1;
-        case FAT_12:
-                return next_cluster_12(bt, cluster, file);
-        case FAT_16:
-                return next_cluster_16(bt, cluster, file);
-        case FAT_32:
-                return next_cluster_32(bt, cluster, file);
-        }
+        return next_cluster_32(bt, cluster, file);
 }
 
 static uint32_t find_free_cluster(fat_bpb_t *bt, file_t *file)
@@ -249,8 +241,9 @@ static int iterate_directory(fat_bpb_t *bt, uint32_t dir, file_t *file, int (*ca
                                 }
                                 if (dir[i].flags & FAT_VOLUME_ID)
                                         continue;
+                                size_t entry = s * entries + i;
+                                int res = callback(cluster,&dir[i],entry);
 
-                                int res = callback(cluster,&dir[i],i);
                                 if (res < 0)
                                         return res;
                         }
@@ -276,7 +269,7 @@ static int read(file_t *file, void *buf, size_t n)
         if ((uint32_t)file->offset >= (uint32_t)dir.size)
                 return 0;
         if (file->offset + n > dir.size)
-        n = dir.size - file->offset;
+                n = dir.size - file->offset;
         uint8_t *out = buf;
         uint32_t cluster = first_cluster;
         uint32_t cluster_bytes =
@@ -304,7 +297,7 @@ static int read(file_t *file, void *buf, size_t n)
                          sizeof(sector_buf));
                 size_t copy = priv->bpb.sector_size - offset;
                 if (copy > n)
-                    copy = n;
+                        copy = n;
                 memcpy(out, sector_buf + offset, copy);
                 out += copy;
                 n -= copy;
@@ -319,6 +312,7 @@ static int read(file_t *file, void *buf, size_t n)
         }
 
         size_t done = (uint8_t *)out - (uint8_t *)buf;
+        file->offset += done;
         return done;
 }
 

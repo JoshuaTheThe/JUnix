@@ -16,11 +16,11 @@ void worker(void)
 void kmain(void)
 {
         cpu_ei();
-        uint8_t *buffer = kmalloc(2048);
-        int fd = open("/mnt/hello.txt", 0);
+        uint8_t *buffer = kmalloc(10000);
+        int fd = open("/mnt/src/kernel/core/kmain.c", 0);
         if (fd < 0)
                 panic(PANIC_TODO);
-        read(fd, buffer, 2048);
+        read(fd, buffer, 10000);
         kprint("%s\r\n", buffer);
         kfree(buffer);
         close(fd);
