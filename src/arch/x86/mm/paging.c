@@ -1,6 +1,7 @@
 
 #include <mm/paging.h>
 #include <mm/pmm.h>
+#include <mm/alloc.h>
 #include <cpu/cpu.h>
 #include <dbg.h>
 #include <string.h>
@@ -169,7 +170,7 @@ void paging_map(address_space_t *as, uintptr_t virt, uintptr_t phys, uint32_t fl
         m->phys = phys & ~0xFFF;
         m->virt = virt & ~0xFFF;
 
-        if (paging_active)
+        if (paging_active && as == __space)
                 __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
 
         restore_flags(flags_saved);
@@ -205,7 +206,8 @@ void paging_unmap(address_space_t *as, uintptr_t virt)
         pmm_free((void *)virt_to_phys(as, (void *)virt));
         page_table_t *pt = phys_to_virt(as, pde & ~0xFFF);
         pt->entries[tab] = 0;
-        __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
+        if (paging_active && as == __space)
+                __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
 }
 
 void paging_init(void)
@@ -221,22 +223,11 @@ void paging_init(void)
         memset(kernel_address_space.pd, 0, PAGE_SIZE);
 
         /*
-         * Map first 128 KiB (pmm bitmap)
-         */
-        LOG(" [mm] mapping PMM bitmap\r\n");
-        for (uintptr_t addr = 0;
-             addr < 0x20000;
-             addr += PAGE_SIZE)
-        {
-                paging_map(&kernel_address_space, addr, addr, PAGE_WRITE);
-        }
-
-        /*
          * Map kernel
          */
-        LOG(" [mm] mapping 0xC0000000-0xC0800000 as 0x00200000 - 0x00800000\r\n");
+        LOG(" [mm] mapping 0xC0000000-0xC1000000 as 0x00200000 - 0x01000000\r\n");
         for (uintptr_t addr = 0x200000;
-             addr < 0x800000;
+             addr < 0x1000000;
              addr += PAGE_SIZE)
         {
                 paging_map(&kernel_address_space, addr + (0xC0000000 - 0x200000), addr, PAGE_WRITE);
@@ -277,7 +268,47 @@ void paging_clear_address_space(address_space_t *as)
  */
 address_space_t paging_copy_space(address_space_t *as)
 {
-        (void)as;
-        panic(PANIC_TODO);
-        return (address_space_t){0};        
+        address_space_t new = {0};
+        new.capacity = as->count;
+        if (as->count < MAX_KERNEL_MAPPINGS)
+                return (address_space_t){0};
+        new.count = 0;
+        new.items = kmalloc(sizeof(mapping_t) * MAX_KERNEL_MAPPINGS);
+        new.pd = pmm_alloc();
+        memset(new.pd, 0, PAGE_SIZE);
+        for (size_t i = PAGE_DIR_INDEX(0xC0000000); i < 1024; i++)
+        {
+                new.pd->entries[i] = as->pd->entries[i];
+        }
+
+        for (size_t i = 0; i < as->count; i++)
+        {
+                if (as->items[i].virt >= 0xC0000000)
+                {
+                        new.items[new.count++] = as->items[i];
+                }
+        }
+
+        for (size_t i = 0; i < as->count; i++)
+        {
+                mapping_t *m = &as->items[i];
+                if (m->virt >= 0xC0000000)
+                        continue;
+                const size_t old_phys = as->items[i].phys;
+                const size_t new_phys = virt_to_phys(__space, pmm_alloc());
+                char page[PAGE_SIZE];
+
+                // Load data from old page
+                paging_map(__space, TEMPORARY_PAGE, old_phys, PAGE_WRITE);
+                memcpy(page, (void *)TEMPORARY_PAGE, PAGE_SIZE);
+                paging_unmap(__space, TEMPORARY_PAGE);
+
+                // Store data to new page
+                paging_map(__space, TEMPORARY_PAGE, new_phys, PAGE_WRITE);
+                memcpy((void *)TEMPORARY_PAGE, page, PAGE_SIZE);
+                paging_unmap(__space, TEMPORARY_PAGE);
+                paging_map(&new, as->items[i].virt, new_phys, PAGE_WRITE);
+        }
+
+        return new;
 }

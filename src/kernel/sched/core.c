@@ -128,10 +128,22 @@ int proc_open(proc_t *proc, char *path, int flags, int mode)
 {
         (void)flags;
         (void)mode;
-        int fd;
-        for (fd=0;!proc->fd.items[fd]&&(size_t)fd<proc->fd.capacity;++fd)
-                ;
-        if ((size_t)fd==proc->fd.capacity||!proc->fd.items)
+        size_t fd = 0;
+        if (!proc->fd.items)
+        {
+                goto new;
+        }
+
+        for (fd = 0; fd < proc->fd.capacity; ++fd)
+        {
+                if (!proc->fd.items[fd])
+                {
+                        goto open;
+                }
+        }
+
+new:
+        if (fd == proc->fd.capacity || !proc->fd.items)
         {
                 void *new = kmalloc(proc->fd.capacity + 8 * sizeof(file_t *));
                 if (proc->fd.capacity > 0 && proc->fd.items)
@@ -144,6 +156,7 @@ int proc_open(proc_t *proc, char *path, int flags, int mode)
                 fd = proc->fd.capacity - 8;
         }
 
+open:
         if (vfs_open(path, &proc->fd.items[fd]) < 0)
                 return -1;
         return fd;

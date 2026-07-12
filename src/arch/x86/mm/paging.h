@@ -22,6 +22,7 @@
 #define PAGE_OFFSET(x)    ((x) & 0xFFF)
 
 #define MAX_KERNEL_MAPPINGS (20000)
+#define TEMPORARY_PAGE (0xFFC00000)
 
 typedef uint32_t pte_t;
 typedef uint32_t pde_t;

@@ -46,6 +46,9 @@ SECTIONS
                 *(.comment*)
         }
 
+        . = ALIGN(4096);
+        page_bitmap = .;
+        . += 0x20000;
+        . = ALIGN(4096);
         mem_start   = .;
-        page_bitmap = 0x1000;
 }
