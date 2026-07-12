@@ -547,7 +547,7 @@ void pciRegister(pci_device_t *dev)
                 uintptr_t phys = bar & ~0xF;
                 size_t size = pciGetBARSize(dev, i);
                 for (uintptr_t off = 0; off < size; off += PAGE_SIZE)
-                        paging_map(phys + off, phys + off, PAGE_WRITE);
+                        paging_map(&kernel_address_space, phys + off, phys + off, PAGE_WRITE);
                 LOG(" [pci] Registering BAR%d, ((char *)0x%x)[%d]\r\n", i, dev->bar[i], size);
         }
 

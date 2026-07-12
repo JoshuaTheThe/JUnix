@@ -1,27 +1,49 @@
 
-#ifndef SCHED_CORE_H
-#define SCHED_CORE_H
+#ifndef _PROC_H
+#define _PROC_H
 
+#include <stdint.h>
+#include <stddef.h>
 #include <sched/task.h>
 #include <sched/trap.h>
 #include <sched/user.h>
 #include <mm/paging.h>
 #include <fs/fs.h>
 
-#define MAX_MAPPINGS (65536)
+#define MAX_TASKS (16)
+
+#define KERNEL_STACK_VIRT (0xC0100000)
 
 typedef uint64_t pid_t;
 
+typedef enum
+{
+        TASK_READY,
+        TASK_RUNNING,
+        TASK_BLOCKED,
+        TASK_DEAD,
+        TASK_WAITING,
+} task_state_t;
+
+typedef struct proc_t proc_t;
+
 typedef struct task_t
 {
+        void                  *kernel_stack;
+        proc_t                *parent;
+        task_state_t           state;
         task_state_registers_t regs;
-        pid_t                  pid;
-        bool                   active;
-        bool                   waiting;
-        userid_t               user;
-        char                 **argv;
-        int                    argc;
-        vnode_t               *cwd;
+} task_t;
+
+typedef struct proc_t
+{
+        struct proc_t   *next,*prev;
+        pid_t            pid;
+        char           **argv;
+        int              argc;
+        vnode_t         *cwd;
+        task_t           tasks[MAX_TASKS];
+        size_t           taskcount;
 
         struct
         {
@@ -30,42 +52,31 @@ typedef struct task_t
                 size_t         capacity;
         } fd;
 
-        struct
-        {
-                struct {
-                        pid_t pid;
-                        int type;
-                } *items; // yes
-                size_t   capacity;
-                size_t   count;
-                int      result;
-        } waiting_for_me;
+        address_space_t *space;
+} proc_t;
 
-        struct
-        {
-                mapping_t  items[MAX_MAPPINGS];
-                size_t     count;
-        } mappings;
+typedef enum
+{
+        SIG_TERM,
+} sig_t;
 
-        page_directory_t *pd;
-        
-        // in future add things like page tabels and perms
-        // this is ring0 for now
-} task_t;
+extern task_t         *current_task;
+extern proc_t         *current_proc;
+extern task_state_registers_t scratch;
+extern uint64_t ticks_since_boot;
 
-int  task_open(task_t *task, char *path, int flags, int mode);
-void task_close(task_t *task, int fd);
+void sched_next(void);
+void sched_load(void);
+void sched_save(void);
+void sched_init(void);
 
-void scheduler_init(void);
-vnode_t *scheduler_add_process(task_state_registers_t initial_regs, char *name);
-vnode_t *scheduler_find_process(pid_t pid);
+proc_t *proc_create(void);
+task_t *task_create(proc_t *proc);
 
-extern task_state_registers_t scratch_proc;
-extern vnode_t *override_next, *current_process_fil;
-extern uint32_t ticks_since_boot;
+void    proc_kill(proc_t *); // clear, remove from ll
+void    proc_clear(proc_t *); // clear all mappings, and registers, .., also suspend
 
-extern task_t  early_task;
-extern task_t *active_task;
+int proc_open(proc_t *proc, char *path, int flags, int mode);
+void proc_close(proc_t *proc, int fd);
 
 #endif
-

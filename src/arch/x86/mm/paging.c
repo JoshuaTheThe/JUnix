@@ -1,14 +1,24 @@
 
 #include <mm/paging.h>
 #include <mm/pmm.h>
-#include <sched/core.h>
 #include <cpu/cpu.h>
 #include <dbg.h>
 #include <string.h>
+#include <panic.h>
 
 static bool paging_active = false;
 
-uintptr_t virt_to_phys(void *ptr)
+mapping_t       kernel_mappings[MAX_KERNEL_MAPPINGS] = {0};
+address_space_t kernel_address_space = {0};
+
+static address_space_t *__space = NULL;
+
+address_space_t *paging_get_address_space(void)
+{
+        return __space;
+}
+
+uintptr_t virt_to_phys(address_space_t *as, void *ptr)
 {
         if ((uintptr_t)ptr >= 0xC0000000 &&
             (uintptr_t)ptr <  0xC1000000 && !paging_active)
@@ -23,13 +33,13 @@ uintptr_t virt_to_phys(void *ptr)
         uint32_t dir = PAGE_DIR_INDEX(virt);
         uint32_t tab = PAGE_TAB_INDEX(virt);
 
-        pde_t pde = active_task->pd->entries[dir];
+        pde_t pde = as->pd->entries[dir];
 
         if (!(pde & PAGE_PRESENT))
                 return 0;
 
         page_table_t *pt =
-        phys_to_virt(pde & ~0xFFF);
+        phys_to_virt(as, pde & ~0xFFF);
         if (!pt)
                 return 0;
 
@@ -41,7 +51,7 @@ uintptr_t virt_to_phys(void *ptr)
         return (pte & ~0xFFF) + PAGE_OFFSET(virt);
 }
 
-void *phys_to_virt(uintptr_t addr)
+void *phys_to_virt(address_space_t *as, uintptr_t addr)
 {
         if (addr >= 0x200000 &&
             addr <  0x210000 && !paging_active)
@@ -52,9 +62,9 @@ void *phys_to_virt(uintptr_t addr)
                 return (void *)addr;
         uintptr_t phys = addr & ~0xFFF;
         uintptr_t offset = addr & 0xFFF;
-        for (size_t i = 0; i < active_task->mappings.count; i++)
+        for (size_t i = 0; i < as->count; i++)
         {
-                mapping_t *m = &active_task->mappings.items[i];
+                mapping_t *m = &as->items[i];
 
                 if (m->phys == phys)
                 {
@@ -65,9 +75,10 @@ void *phys_to_virt(uintptr_t addr)
         return NULL;
 }
 
-void paging_switch(page_directory_t *pd)
+void paging_switch(address_space_t *as)
 {
-        uintptr_t phys = virt_to_phys(pd);
+        __space = as;
+        uintptr_t phys = virt_to_phys(as, as->pd);
         __asm volatile(
                 "mov %0, %%cr3"
                 :
@@ -111,7 +122,7 @@ void paging_enable(void)
         );
 }
 
-void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
+void paging_map(address_space_t *as, uintptr_t virt, uintptr_t phys, uint32_t flags)
 {
         LOG(" [mm] mapping virt %x to phys %x\r\n", virt, phys);
         uint32_t dir = PAGE_DIR_INDEX(virt);
@@ -119,7 +130,7 @@ void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
 
         page_table_t *new_pt = NULL;
 
-        if (!(active_task->pd->entries[dir] & PAGE_PRESENT))
+        if (!(as->pd->entries[dir] & PAGE_PRESENT))
         {
                 new_pt = pmm_alloc();
                 memset(new_pt, 0, PAGE_SIZE);
@@ -130,22 +141,22 @@ void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
 
         if (new_pt)
         {
-                uintptr_t pt_phys = virt_to_phys(new_pt);
+                uintptr_t pt_phys = virt_to_phys(as, new_pt);
 
-                active_task->pd->entries[dir] =
+                as->pd->entries[dir] =
                         pt_phys |
                         PAGE_PRESENT |
                         PAGE_WRITE;
 
                 mapping_t *m =
-                    &active_task->mappings.items[active_task->mappings.count++];
+                    &as->items[as->count++];
 
                 m->phys = pt_phys & ~0xFFF;
                 m->virt = (uintptr_t)new_pt & ~0xFFF;
         }
 
         page_table_t *pt =
-                phys_to_virt(active_task->pd->entries[dir] & ~0xFFF);
+                phys_to_virt(as, as->pd->entries[dir] & ~0xFFF);
 
         pt->entries[tbl] =
                 (phys & ~0xFFF) |
@@ -153,7 +164,7 @@ void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
                 PAGE_PRESENT;
 
         mapping_t *m =
-            &active_task->mappings.items[active_task->mappings.count++];
+            &as->items[as->count++];
 
         m->phys = phys & ~0xFFF;
         m->virt = virt & ~0xFFF;
@@ -164,16 +175,16 @@ void paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags)
         restore_flags(flags_saved);
 }
 
-bool remove_mapping(uintptr_t phys)
+bool remove_mapping(address_space_t *as, uintptr_t phys)
 {
         phys &= ~0xFFF;
-        for (size_t i = 0; i < active_task->mappings.count; i++)
+        for (size_t i = 0; i < as->count; i++)
         {
-                if (active_task->mappings.items[i].phys == (phys & ~0xFFF))
+                if (as->items[i].phys == (phys & ~0xFFF))
                 {
                         // Move the last entry over this one
-                        active_task->mappings.items[i] = active_task->mappings.items[active_task->mappings.count - 1];
-                        active_task->mappings.count--;
+                        as->items[i] = as->items[as->count - 1];
+                        as->count--;
                         return true;
                 }
         }
@@ -181,31 +192,33 @@ bool remove_mapping(uintptr_t phys)
         return false;
 }
 
-void paging_unmap(uintptr_t virt)
+void paging_unmap(address_space_t *as, uintptr_t virt)
 {
         uint32_t dir = PAGE_DIR_INDEX(virt);
         uint32_t tab = PAGE_TAB_INDEX(virt);
 
-        pde_t pde = active_task->pd->entries[dir];
+        pde_t pde = as->pd->entries[dir];
         if (!(pde & PAGE_PRESENT))
                 return;
-        LOG(" [mm] unmapping virt %x (%x)\r\n", virt, phys_to_virt(pde & ~0xFFF));
-        remove_mapping(virt);
-        pmm_free((void *)virt_to_phys((void *)virt));
-        page_table_t *pt = phys_to_virt(pde & ~0xFFF);
+        LOG(" [mm] unmapping virt %x (%x)\r\n", virt, phys_to_virt(as, pde & ~0xFFF));
+        remove_mapping(as, virt);
+        pmm_free((void *)virt_to_phys(as, (void *)virt));
+        page_table_t *pt = phys_to_virt(as, pde & ~0xFFF);
         pt->entries[tab] = 0;
         __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
 }
 
 void paging_init(void)
 {
-        active_task = &early_task;
-        active_task->pd = pmm_alloc();
+        kernel_address_space.capacity = MAX_KERNEL_MAPPINGS;
+        kernel_address_space.count    = 0;
+        kernel_address_space.items    = kernel_mappings;
+        kernel_address_space.pd       = pmm_alloc();
         mapping_t *m =
-            &active_task->mappings.items[active_task->mappings.count++];
-        m->phys = virt_to_phys(active_task->pd) & ~0xFFF;
-        m->virt = (uintptr_t)active_task->pd & ~0xFFF;
-        memset(active_task->pd, 0, PAGE_SIZE);
+            &kernel_address_space.items[kernel_address_space.count++];
+        m->phys = virt_to_phys(&kernel_address_space, kernel_address_space.pd) & ~0xFFF;
+        m->virt = (uintptr_t)kernel_address_space.pd & ~0xFFF;
+        memset(kernel_address_space.pd, 0, PAGE_SIZE);
 
         /*
          * Map first 128 KiB (pmm bitmap)
@@ -215,7 +228,7 @@ void paging_init(void)
              addr < 0x20000;
              addr += PAGE_SIZE)
         {
-                paging_map(addr, addr, PAGE_WRITE);
+                paging_map(&kernel_address_space, addr, addr, PAGE_WRITE);
         }
 
         /*
@@ -226,7 +239,7 @@ void paging_init(void)
              addr < 0x800000;
              addr += PAGE_SIZE)
         {
-                paging_map(addr + (0xC0000000 - 0x200000), addr, PAGE_WRITE);
+                paging_map(&kernel_address_space, addr + (0xC0000000 - 0x200000), addr, PAGE_WRITE);
         }
 
         /*
@@ -237,14 +250,34 @@ void paging_init(void)
              addr < 0x00200000;
              addr += PAGE_SIZE)
         {
-                paging_map(addr, addr, PAGE_WRITE);
+                paging_map(&kernel_address_space, addr, addr, PAGE_WRITE);
         }
         
         /*
          * Load page directory
          */
         LOG(" [mm] loading page dir\r\n");
-        paging_switch(active_task->pd);
+        paging_switch(&kernel_address_space);
 
         paging_active = true;
+}
+
+void paging_clear_address_space(address_space_t *as)
+{
+        for (size_t i = 0; i < as->count; ++i)
+        {
+                if (as->items[i].virt < 0xC0000000)
+                        paging_unmap(as, as->items[i].virt);
+        }
+}
+
+/**
+ * copy the virt address space, allocate new for phys, good for e.g. fork
+ * execpt kernel, keep phys unchanged for 0xC000_0000 and above
+ */
+address_space_t paging_copy_space(address_space_t *as)
+{
+        (void)as;
+        panic(PANIC_TODO);
+        return (address_space_t){0};        
 }

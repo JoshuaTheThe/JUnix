@@ -2,8 +2,6 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
-#include <sched/core.h> // so we can have task state, currently unimpl
-
 typedef enum
 {
         // no more for now

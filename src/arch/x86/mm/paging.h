@@ -3,6 +3,7 @@
 #define _PAGING_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define PAGE_SIZE (4096)
 
@@ -19,6 +20,8 @@
 #define PAGE_DIR_INDEX(x) (((x) >> 22) & 0x3FF)
 #define PAGE_TAB_INDEX(x) (((x) >> 12) & 0x3FF)
 #define PAGE_OFFSET(x)    ((x) & 0xFFF)
+
+#define MAX_KERNEL_MAPPINGS (20000)
 
 typedef uint32_t pte_t;
 typedef uint32_t pde_t;
@@ -38,13 +41,32 @@ typedef struct
         pde_t entries[1024];
 } page_directory_t;
 
-void      paging_map(uintptr_t virt, uintptr_t phys, uint32_t flags);
-void      paging_unmap(uintptr_t virt);
-uintptr_t virt_to_phys(void *);
-void     *phys_to_virt(uintptr_t);
-void      paging_switch(page_directory_t *);
+typedef struct
+{
+        page_directory_t *pd;
+        mapping_t        *items;
+        size_t            count;
+        size_t            capacity;
+} address_space_t;
+
+extern address_space_t kernel_address_space;
+extern mapping_t       kernel_mappings[MAX_KERNEL_MAPPINGS];
+
+address_space_t *paging_get_address_space(void);
+void      paging_map(address_space_t *as, uintptr_t virt, uintptr_t phys, uint32_t flags);
+void      paging_unmap(address_space_t *as, uintptr_t virt);
+uintptr_t virt_to_phys(address_space_t *as, void *);
+void     *phys_to_virt(address_space_t *as, uintptr_t);
+void      paging_switch(address_space_t *as);
 void      paging_init(void);
 void      paging_enable(void);
 void      paging_disable(void);
+void      paging_clear_address_space(address_space_t *as);
+
+/**
+ * copy the virt address space, allocate new for phys, good for e.g. fork
+ * execpt kernel, keep phys unchanged for 0xC000_0000 and above
+ */
+address_space_t paging_copy_space(address_space_t *as);
 
 #endif

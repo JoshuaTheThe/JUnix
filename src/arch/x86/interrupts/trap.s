@@ -6,6 +6,7 @@
         .extern trap_next
         .extern sys_handler
         .extern IDEIrq
+        .extern current_task
 default_int:
         cli
         jmp default_int
@@ -19,18 +20,18 @@ ide_int:
         iret
 sys_wrapper:
         cli
-        movl    %eax, (0*4+scratch_proc)
-        movl    %ecx, (1*4+scratch_proc)
-        movl    %edx, (2*4+scratch_proc)
-        movl    %ebx, (3*4+scratch_proc)
-        movl    %ebp, (5*4+scratch_proc)
-        movl    %esi, (6*4+scratch_proc)
-        movl    %edi, (7*4+scratch_proc)
-        movl    $scratch_proc, %edi
+        movl    %eax, (0*4+scratch)
+        movl    %ecx, (1*4+scratch)
+        movl    %edx, (2*4+scratch)
+        movl    %ebx, (3*4+scratch)
+        movl    %ebp, (5*4+scratch)
+        movl    %esi, (6*4+scratch)
+        movl    %edi, (7*4+scratch)
+        movl    $scratch, %edi
         popl    8*4(%edi)
         popl    9*4(%edi)
         popl    15*4(%edi)
-        movl    %esp, (4*4+scratch_proc)
+        movl    %esp, (4*4+scratch)
 
         # --- SEGMENT REGISTERS ---
         movw    %ds, %ax
@@ -52,13 +53,15 @@ sys_wrapper:
         movw    %ax, %gs
 
         # --- SWITCH TO INTERRUPT STACK AND COMMIT ---
-        movl    $(kstack_top-16), %esp
+        # --- first dword of current_task is a pointer to the kernel stack
+        movl    (current_task), %esp
+        movl    (%esp), %esp
         xorl    %ebp,%ebp
 
         call    sys_handler
 
         # --- RELOAD POINTER (calls may have trashed edi) ---
-        movl    $scratch_proc, %edi
+        movl    $scratch, %edi
 
         # --- RESTORE SEGMENT REGISTERS ---
         movl    10*4(%edi), %eax
@@ -83,8 +86,8 @@ sys_wrapper:
         movl    5*4(%edi), %ebp
         movl    6*4(%edi), %esi
         movl    7*4(%edi), %edi
-        pushl   15*4+scratch_proc
-        pushl   9*4+scratch_proc
-        pushl   8*4+scratch_proc
+        pushl   15*4+scratch
+        pushl   9*4+scratch
+        pushl   8*4+scratch
         sti
         iret

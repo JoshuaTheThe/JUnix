@@ -3,9 +3,7 @@
 #include <cpu/cpu.h>
 #include <drivers/kprint.h>
 #include <interrupts/timer.h>
-#include <sched/core.h>
 #include <mm/alloc.h>
-#include <elf/elf.h>
 
 void kmain(void)
 {

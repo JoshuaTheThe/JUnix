@@ -47,14 +47,14 @@ __attribute__((ownership_returns(__kmalloc))) void *__kmalloc(size_t size, const
                 panic(PANIC_RAN_OUT_OF_MEMORY);
         for (size_t i = 0; i < pages; i++)
         {
-                uintptr_t phys = (uintptr_t)virt_to_phys(pmm_alloc());
+                uintptr_t phys = (uintptr_t)virt_to_phys(paging_get_address_space(), pmm_alloc());
                 if (!phys)
                 {
                         for (size_t j = 0; j < i; j++)
                         {
                                 uintptr_t old_phys =
-                                        virt_to_phys((void *)(virt + j * PAGE_SIZE));
-                                paging_unmap(virt + j * PAGE_SIZE);
+                                        virt_to_phys(paging_get_address_space(), (void *)(virt + j * PAGE_SIZE));
+                                paging_unmap(paging_get_address_space(), virt + j * PAGE_SIZE);
                                 pmm_free((void *)old_phys);
                         }
 
@@ -62,6 +62,7 @@ __attribute__((ownership_returns(__kmalloc))) void *__kmalloc(size_t size, const
                 }
 
                 paging_map(
+                        paging_get_address_space(),
                         virt + i * PAGE_SIZE,
                         phys,
                         PAGE_PRESENT | PAGE_WRITE
@@ -95,9 +96,9 @@ __attribute__((ownership_takes(__kmalloc, 1))) void __kfree(void *ptr, const cha
         for (size_t i = 0; i < pages; i++)
         {
                 uintptr_t page = virt + i * PAGE_SIZE;
-                uintptr_t phys = virt_to_phys((void *)page);
+                uintptr_t phys = virt_to_phys(paging_get_address_space(), (void *)page);
 
-                paging_unmap(page);
+                paging_unmap(paging_get_address_space(), page);
                 pmm_free((void *)phys);
         }
 

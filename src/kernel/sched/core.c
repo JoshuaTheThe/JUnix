@@ -1,195 +1,159 @@
 
-#include <sched/core.h>
-#include <fs/fs.h>
-#include <panic.h>
-#include <string.h>
 #include <mm/alloc.h>
-#include <dbg.h>
-#include <cpu/cpu.h>
 #include <mm/paging.h>
+#include <cpu/cpu.h>
+#include <sched/core.h>
+#include <string.h>
+#include <panic.h>
+#include <dbg.h>
 
-task_state_registers_t scratch_proc = {0};
-uint32_t ticks_since_boot = 0;
+static proc_t *processes    = NULL, *tail = NULL;
+static proc_t *kernel_proc  = NULL;
+static task_t *kernel_task  = NULL;
+task_t        *current_task = NULL;
+proc_t        *current_proc = NULL;
 
-vnode_t *proc = NULL, *current_process_fil = NULL, *override_next = NULL;
+uint64_t ticks_since_boot = 0;
 
-task_t  early_task  = {0};
-task_t *active_task;
+static bool override_store = false; // cancel store to current proc, e.g. interrupt after exit()
 
-int task_open(task_t *task, char *path, int flags, int mode)
+task_state_registers_t scratch;
+
+task_t *task_create(proc_t *proc)
+{
+        if (proc->taskcount >= MAX_TASKS)
+                return NULL;
+        task_t *task = &proc->tasks[proc->taskcount];
+
+        uintptr_t phys = (uintptr_t)virt_to_phys(kernel_proc->space, pmm_alloc());
+        task->kernel_stack = (void *)KERNEL_STACK_VIRT;
+        paging_map(proc->space,
+                   KERNEL_STACK_VIRT + PAGE_SIZE * proc->taskcount++,
+                   phys,
+                   PAGE_PRESENT | PAGE_WRITE);
+        return task;
+}
+
+proc_t *proc_create(void)
+{
+        static uint64_t pid = 0;
+        proc_t *proc        = kmalloc(sizeof(*proc));
+        proc->pid           = pid++;
+        proc->taskcount     = 0;
+        proc->cwd           = root_vnode;
+        if (tail)
+                tail->next = proc;
+        proc->prev = tail;
+        tail       = proc;
+        if (!processes)
+                processes = proc;
+        return proc;
+}
+
+void proc_clear(proc_t *proc)
+{
+        memset(proc->tasks, 0, sizeof(proc->tasks));
+        for (size_t i = 0; i < proc->fd.count; ++i)
+        {
+                vfs_close(proc->fd.items[i]);
+        }
+
+        memset(&proc->fd, 0, sizeof(proc->fd));
+        paging_clear_address_space(proc->space);
+        kfree(proc->space->items);
+        memset(proc->space, 0, sizeof(*proc->space));
+        kfree(proc->space);
+        proc->space = NULL;
+}
+
+void proc_kill(proc_t *proc)
+{
+        proc_clear(proc);
+        if (proc->next)
+                proc->next->prev = proc->prev;
+        if (proc->prev)
+                proc->prev->next = proc->next;
+        if (proc == current_proc)
+        {
+                override_store = true;
+                cpu_ei();
+                while (1)
+                        ;
+        }
+}
+
+void sched_next(void)
+{
+        const size_t task_index = current_task - current_proc->tasks;
+        if (task_index < current_proc->taskcount - 1)
+        {
+                current_task = &current_proc->tasks[task_index + 1];
+        }
+        else
+        {
+                current_proc = current_proc->next;
+                if (!current_proc)
+                        current_proc = processes;
+                current_task = &current_proc->tasks[0];
+        }
+        ackint();
+}
+
+void sched_load(void)
+{
+        if (!current_task)
+                panic(PANIC_TODO);
+        scratch = current_task->regs;
+        paging_switch(current_proc->space);
+}
+
+void sched_save(void)
+{
+        if (!current_task)
+                panic(PANIC_TODO);
+        if (override_store)
+                return;
+        current_task->regs = scratch;
+}
+
+void sched_init(void)
+{
+        current_proc = kernel_proc = proc_create();
+        kernel_proc->space = &kernel_address_space;
+        current_task = kernel_task = task_create(kernel_proc);
+        LOG(" [proc] OK\r\n");
+}
+
+int proc_open(proc_t *proc, char *path, int flags, int mode)
 {
         (void)flags;
         (void)mode;
         int fd;
-        for (fd=0;!task->fd.items[fd]&&(size_t)fd<task->fd.capacity;++fd)
+        for (fd=0;!proc->fd.items[fd]&&(size_t)fd<proc->fd.capacity;++fd)
                 ;
-        if ((size_t)fd==task->fd.capacity||!task->fd.items)
+        if ((size_t)fd==proc->fd.capacity||!proc->fd.items)
         {
-                void *new = kmalloc(task->fd.capacity + 8 * sizeof(file_t *));
-                if (task->fd.capacity > 0 && task->fd.items)
+                void *new = kmalloc(proc->fd.capacity + 8 * sizeof(file_t *));
+                if (proc->fd.capacity > 0 && proc->fd.items)
                 {
-                        memcpy(new, task->fd.items, task->fd.capacity * sizeof(file_t *));
-                        kfree(task->fd.items);
+                        memcpy(new, proc->fd.items, proc->fd.capacity * sizeof(file_t *));
+                        kfree(proc->fd.items);
                 }
-                task->fd.capacity += 8;
-                task->fd.items = new;
-                fd = task->fd.capacity - 8;
+                proc->fd.capacity += 8;
+                proc->fd.items = new;
+                fd = proc->fd.capacity - 8;
         }
 
-        if (vfs_open(path, &task->fd.items[fd]) < 0)
+        if (vfs_open(path, &proc->fd.items[fd]) < 0)
                 return -1;
         return fd;
 }
 
-void task_close(task_t *task, int fd)
+void proc_close(proc_t *proc, int fd)
 {
-        if ((size_t)fd >= task->fd.capacity)
+        if ((size_t)fd >= proc->fd.capacity)
                 panic(PANIC_TODO);
-        file_t *file = task->fd.items[fd];
-        task->fd.items[fd] = NULL;
+        file_t *file = proc->fd.items[fd];
+        proc->fd.items[fd] = NULL;
         vfs_close(file);
-}
-
-vnode_t *scheduler_mkdir(vnode_t *p, char *name, uint32_t flags)
-{
-        vnode_t *new = kmalloc(sizeof(*new));
-        new->name = name;
-        new->flags = flags;
-        new->ops = p->ops;
-        vfs_append_child(p, new);
-        return new;
-}
-
-static file_ops_t ops = {
-        .length = NULL,
-        .mkdir  = scheduler_mkdir,
-        .readdir = NULL, // for now
-        .read = NULL,
-        .write = NULL,
-        .open = NULL,
-        .close = NULL,
-        .lseek = NULL,
-        .release = NULL,
-        .capture = NULL,
-};
-
-void scheduler_load(void)
-{
-        task_t *task = (task_t *)current_process_fil->private;
-        not_optional(task);
-        memcpy(&scratch_proc, &task->regs, sizeof(task->regs));
-}
-
-void scheduler_next(void)
-{
-        not_optional(current_process_fil);
-        not_optional(proc);
-        vnode_t *to_remove = NULL;
-        while(1)
-        {
-                if (!override_next)
-                {
-                        current_process_fil = current_process_fil->next;
-                        if (!current_process_fil)
-                                current_process_fil = proc->children;
-                }
-                else
-                {
-                        current_process_fil = override_next;
-                        override_next = NULL;
-                }
-
-                if (current_process_fil &&
-                   ((task_t *)current_process_fil->private)->active)
-                        break;
-
-                if (current_process_fil)
-                {
-                        to_remove = current_process_fil;
-                        task_t *task = (task_t *)to_remove->private;
-                        if (to_remove->next)
-                                to_remove->next->prev = to_remove->prev;
-                        if (to_remove->prev)
-                                to_remove->prev->next = to_remove->next;
-                        if (to_remove->parent->children == to_remove)
-                                to_remove->parent->children = to_remove->next;
-                        kfree(task);
-                        kfree(to_remove);
-                        current_process_fil = proc->children;
-                }
-                else
-                {
-                        break;
-                }
-        }
-
-        active_task = current_process_fil->private;
-        paging_switch(active_task->pd);
-        ackint();
-}
-
-void scheduler_save(void)
-{
-        task_t *task = (task_t *)current_process_fil->private;
-        not_optional(task);
-        memcpy(&task->regs, &scratch_proc, sizeof(task->regs));
-}
-
-vnode_t *scheduler_add_process(task_state_registers_t initial_regs, char *name)
-{
-        static uint64_t new_pid = 0;
-        task_t *task = kmalloc(sizeof(*task));
-        not_optional(task);
-        task->regs = initial_regs;
-        task->pid  = new_pid++;
-        task->active = true;
-
-        vnode_t *vn = vfs_mkdir(proc, name, VFS_DIRECTORY);
-        not_optional(vn);
-        vn->private = task;
-        LOG(" [krnl] created process %s (%d)\r\n", vn->name, task->pid);
-        return vn;
-}
-
-int scheduler_mount(vnode_t *node, void *data) // not allowed to unmount
-{
-        (void)node;
-        (void)data;
-        node->ops = &ops;
-        current_process_fil = scheduler_add_process((task_state_registers_t){0}, "krnl");
-        ((task_t *)current_process_fil->private)->mappings = early_task.mappings;
-        ((task_t *)current_process_fil->private)->pd       = early_task.pd;
-        active_task = current_process_fil->private;
-        return 0;
-}
-
-static filesystem_t fs = {.name="proc/fs", .mount=scheduler_mount};
-
-void scheduler_init(void)
-{
-        // stage #1, create proc dir
-        // (if not found)
-        if (vfs_lookup("/proc", &proc) < 0)
-        {
-                vnode_t *root;
-                if (vfs_lookup("/",&root) < 0)
-                        panic(PANIC_TODO);
-                proc=scheduler_mkdir(root, "proc", VFS_DIRECTORY);
-        }
-
-        vfs_mount("/proc", &fs, NULL);
-        LOG(" [krnl] scheduler started\r\n");
-}
-
-vnode_t *scheduler_find_process(pid_t pid)
-{
-        vnode_t *node = proc->children;
-        while (node)
-        {
-                if (((task_t *)node->private)->pid == pid)
-                        return node;
-                node = node->next;
-        }
-
-        return NULL;
 }

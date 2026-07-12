@@ -26,7 +26,7 @@ void init(int m, uintptr_t a)
         cpu_init();
         if (vfs_init() != 0 || vfs_init_dev_mnt() != 0)
                 panic(PANIC_TODO);
-        scheduler_init();
+        sched_init();
         serial_init();
         fb_init(m,a);
         rtcInit();
