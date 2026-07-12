@@ -112,6 +112,16 @@ void fb_init(int magic, uintptr_t addr)
         if (magic != 0x36d76289)
                 panic(PANIC_INCORRECT_BOOTLOADER);
         
+        /*
+         * Map grub shit
+         */
+        for (uintptr_t addr = 0x00100000;
+             addr < 0x00200000;
+             addr += PAGE_SIZE)
+        {
+                paging_map(&kernel_address_space, addr, addr, PAGE_WRITE);
+        }
+
         unsigned int offset = 8;
         struct multiboot_tag *tag;
         while (1)
@@ -152,6 +162,13 @@ void fb_init(int magic, uintptr_t addr)
                 }
 
                 offset += (tag->size + 7) & ~7;
+        }
+
+        for (uintptr_t addr = 0x00100000;
+             addr < 0x00200000;
+             addr += PAGE_SIZE)
+        {
+                paging_unmap(&kernel_address_space, addr);
         }
 
         LOG(" [fb] OK");

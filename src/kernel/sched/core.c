@@ -99,11 +99,11 @@ void sched_next(void)
                 current_task = &current_proc->tasks[0];
         }
 
-        if (current_task->state != TASK_RUNNING)
+        if (current_task->state != TASK_RUNNING || current_proc->taskcount == 0)
         {
                 sched_next();
         }
-        
+
         ackint();
 }
 

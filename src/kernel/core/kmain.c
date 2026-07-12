@@ -34,6 +34,6 @@ void kmain(void)
         task->regs.fs  = 0x10;
         task->regs.gs  = 0x10;
         task->state    = TASK_RUNNING;
-        while(1);
+        sys_yield();
         panic(PANIC_TODO);
 }

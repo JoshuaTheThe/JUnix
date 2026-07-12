@@ -232,17 +232,6 @@ void paging_init(void)
         {
                 paging_map(&kernel_address_space, addr + (0xC0000000 - 0x200000), addr, PAGE_WRITE);
         }
-
-        /*
-         * Map grub shit
-         */
-        LOG(" [mm] identity mapping 0x00100000 - 0x00200000 \r\n");
-        for (uintptr_t addr = 0x00100000;
-             addr < 0x00200000;
-             addr += PAGE_SIZE)
-        {
-                paging_map(&kernel_address_space, addr, addr, PAGE_WRITE);
-        }
         
         /*
          * Load page directory
@@ -268,47 +257,7 @@ void paging_clear_address_space(address_space_t *as)
  */
 address_space_t paging_copy_space(address_space_t *as)
 {
-        address_space_t new = {0};
-        new.capacity = as->count;
-        if (as->count < MAX_KERNEL_MAPPINGS)
-                return (address_space_t){0};
-        new.count = 0;
-        new.items = kmalloc(sizeof(mapping_t) * MAX_KERNEL_MAPPINGS);
-        new.pd = pmm_alloc();
-        memset(new.pd, 0, PAGE_SIZE);
-        for (size_t i = PAGE_DIR_INDEX(0xC0000000); i < 1024; i++)
-        {
-                new.pd->entries[i] = as->pd->entries[i];
-        }
-
-        for (size_t i = 0; i < as->count; i++)
-        {
-                if (as->items[i].virt >= 0xC0000000)
-                {
-                        new.items[new.count++] = as->items[i];
-                }
-        }
-
-        for (size_t i = 0; i < as->count; i++)
-        {
-                mapping_t *m = &as->items[i];
-                if (m->virt >= 0xC0000000)
-                        continue;
-                const size_t old_phys = as->items[i].phys;
-                const size_t new_phys = virt_to_phys(__space, pmm_alloc());
-                char page[PAGE_SIZE];
-
-                // Load data from old page
-                paging_map(__space, TEMPORARY_PAGE, old_phys, PAGE_WRITE);
-                memcpy(page, (void *)TEMPORARY_PAGE, PAGE_SIZE);
-                paging_unmap(__space, TEMPORARY_PAGE);
-
-                // Store data to new page
-                paging_map(__space, TEMPORARY_PAGE, new_phys, PAGE_WRITE);
-                memcpy((void *)TEMPORARY_PAGE, page, PAGE_SIZE);
-                paging_unmap(__space, TEMPORARY_PAGE);
-                paging_map(&new, as->items[i].virt, new_phys, PAGE_WRITE);
-        }
-
-        return new;
+        // todo
+        (void)as;
+        return (address_space_t){0};
 }
