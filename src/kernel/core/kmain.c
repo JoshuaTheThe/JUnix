@@ -36,7 +36,7 @@ void kmain(void)
         proc->space    = &space;
         task_t *task   = task_create(proc);
         task->regs.eip = (uintptr_t)exec;
-        task->regs.esp = (uintptr_t)kmalloc(1024) + 1020; // whatever
+        task->regs.esp = (uintptr_t)kmalloc(8192) + 8186; // whatever
         task->regs.cs  = 0x8;
         task->regs.ds  = 0x10;
         task->regs.es  = 0x10;

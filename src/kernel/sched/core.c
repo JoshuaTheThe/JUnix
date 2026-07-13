@@ -61,6 +61,8 @@ void proc_clear(proc_t *proc)
         }
 
         memset(&proc->fd, 0, sizeof(proc->fd));
+        if (proc->space == paging_get_address_space())
+                paging_switch(&kernel_address_space);
         paging_clear_address_space(proc->space);
         kfree(proc->space->items);
         memset(proc->space, 0, sizeof(*proc->space));
@@ -130,7 +132,9 @@ void sched_save(void)
         if (!current_task)
                 panic(PANIC_TODO);
         if (override_store)
-                return;
+        {
+                panic(PANIC_TODO);
+        }
         current_task->regs = scratch;
 }
 
