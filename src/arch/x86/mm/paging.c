@@ -125,6 +125,9 @@ void paging_enable(void)
 
 void paging_map(address_space_t *as, uintptr_t virt, uintptr_t phys, uint32_t flags)
 {
+        not_optional(as);
+        not_optional(as->pd);
+        not_optional(as->items);
         LOG(" [mm] mapping virt %x to phys %x\r\n", virt, phys);
         uint32_t dir = PAGE_DIR_INDEX(virt);
         uint32_t tbl = PAGE_TAB_INDEX(virt);
@@ -176,12 +179,13 @@ void paging_map(address_space_t *as, uintptr_t virt, uintptr_t phys, uint32_t fl
         restore_flags(flags_saved);
 }
 
-bool remove_mapping(address_space_t *as, uintptr_t phys)
+bool remove_mapping(address_space_t *as, uintptr_t virt)
 {
-        phys &= ~0xFFF;
+        not_optional(as);
+        virt &= ~0xFFF;
         for (size_t i = 0; i < as->count; i++)
         {
-                if (as->items[i].phys == (phys & ~0xFFF))
+                if (as->items[i].virt == (virt & ~0xFFF))
                 {
                         // Move the last entry over this one
                         as->items[i] = as->items[as->count - 1];
@@ -195,6 +199,7 @@ bool remove_mapping(address_space_t *as, uintptr_t phys)
 
 void paging_unmap(address_space_t *as, uintptr_t virt)
 {
+        not_optional(as);
         uint32_t dir = PAGE_DIR_INDEX(virt);
         uint32_t tab = PAGE_TAB_INDEX(virt);
 
@@ -257,7 +262,47 @@ void paging_clear_address_space(address_space_t *as)
  */
 address_space_t paging_copy_space(address_space_t *as)
 {
-        // todo
-        (void)as;
-        return (address_space_t){0};
+        address_space_t new = {0};
+        new.capacity = as->count;
+        if (as->capacity < MAX_KERNEL_MAPPINGS)
+                return (address_space_t){0};
+        new.count = 0;
+        new.items = kmalloc(sizeof(mapping_t) * MAX_KERNEL_MAPPINGS);
+        new.pd = pmm_alloc();
+        memset(new.pd, 0, PAGE_SIZE);
+        for (size_t i = PAGE_DIR_INDEX(0xC0000000); i < 1024; i++)
+        {
+                new.pd->entries[i] = as->pd->entries[i];
+        }
+
+        for (size_t i = 0; i < as->count; i++)
+        {
+                if (as->items[i].virt >= 0xC0000000)
+                {
+                        new.items[new.count++] = as->items[i];
+                }
+        }
+
+        for (size_t i = 0; i < as->count; i++)
+        {
+                mapping_t *m = &as->items[i];
+                if (m->virt >= 0xC0000000)
+                        continue;
+                const size_t old_phys = as->items[i].phys;
+                const size_t new_phys = virt_to_phys(__space, pmm_alloc());
+                char page[PAGE_SIZE];
+
+                // Load data from old page
+                paging_map(__space, TEMPORARY_PAGE, old_phys, PAGE_WRITE);
+                memcpy(page, (void *)TEMPORARY_PAGE, PAGE_SIZE);
+                paging_unmap(__space, TEMPORARY_PAGE);
+
+                // Store data to new page
+                paging_map(__space, TEMPORARY_PAGE, new_phys, PAGE_WRITE);
+                memcpy((void *)TEMPORARY_PAGE, page, PAGE_SIZE);
+                paging_unmap(__space, TEMPORARY_PAGE);
+                paging_map(&new, as->items[i].virt, new_phys, PAGE_WRITE);
+        }
+
+        return new;
 }
