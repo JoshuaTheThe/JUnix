@@ -86,24 +86,31 @@ void proc_kill(proc_t *proc)
 
 void sched_next(void)
 {
-        const size_t task_index = current_task - current_proc->tasks;
-        if (task_index < current_proc->taskcount - 1)
+    for (;;)
+    {
+        size_t task_index = current_task - current_proc->tasks;
+
+        if (task_index + 1 < current_proc->taskcount)
         {
-                current_task = &current_proc->tasks[task_index + 1];
+            current_task = &current_proc->tasks[task_index + 1];
         }
         else
         {
-                current_proc = current_proc->next;
-                if (!current_proc)
-                        current_proc = processes;
-                current_task = &current_proc->tasks[0];
+            current_proc = current_proc->next;
+            if (!current_proc)
+                current_proc = processes;
+
+            if (current_proc->taskcount == 0)
+                continue;
+
+            current_task = &current_proc->tasks[0];
         }
 
-        if (current_proc->taskcount == 0)
-                sched_next();
-        if (current_task->state != TASK_RUNNING)
-                sched_next();
-        ackint();
+        if (current_task->state == TASK_RUNNING)
+            break;
+    }
+
+    ackint();
 }
 
 void sched_load(void)

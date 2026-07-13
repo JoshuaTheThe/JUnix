@@ -24,7 +24,6 @@ void kmain(void)
         kprint("%s\r\n", buffer);
         kfree(buffer);
         close(fd);
-        cpu_di();
         proc_t *proc   = proc_create();
         address_space_t space = paging_copy_space(&kernel_address_space);
         proc->space    = &space;
@@ -38,7 +37,6 @@ void kmain(void)
         task->regs.fs  = 0x10;
         task->regs.gs  = 0x10;
         task->state    = TASK_RUNNING;
-        cpu_ei();
         sys_yield();
         panic(PANIC_TODO);
 }
