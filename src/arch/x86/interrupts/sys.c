@@ -70,8 +70,7 @@ void sys_handler(void)
 
                 case SYS_DBGWRITE:
                 {
-                        kprint("%x: %s", regs->ebx, (char *)regs->ebx);
-                        panic(PANIC_TODO);
+                        kprint("%s", regs->ebx, (char *)regs->ebx);
                         break;
                 }
 

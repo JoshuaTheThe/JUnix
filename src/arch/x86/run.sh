@@ -44,7 +44,7 @@ if grub-file --is-x86-multiboot2 bin/junix_x86.o; then
     # Run QEMU with HDD
     qemu-system-x86_64 \
     -drive file=bin/junix_x86.hdd,if=ide,index=0,format=raw \
-    -m 256 \
+    -m 16 \
     -debugcon stdio \
     -no-reboot \
     -no-shutdown

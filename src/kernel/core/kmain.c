@@ -5,11 +5,17 @@
 #include <interrupts/timer.h>
 #include <mm/alloc.h>
 #include <sched/core.h>
+#include <elf.h>
 
-void worker(void)
+uint32_t entry;
+void exec(void)
 {
-        kprint(" [worker] working..\r\n");
-        while(1)
+        file_t *file;
+        if (vfs_open("/mnt/init", &file) < 0)
+                panic(PANIC_TODO);
+        elf_load(file, paging_get_address_space(), &entry);
+        ((void (*)(void))entry)();
+        while(true)
                 ;
 }
 
@@ -28,7 +34,7 @@ void kmain(void)
         address_space_t space = paging_copy_space(&kernel_address_space);
         proc->space    = &space;
         task_t *task   = task_create(proc);
-        task->regs.eip = (uintptr_t)worker;
+        task->regs.eip = (uintptr_t)exec;
         task->regs.esp = (uintptr_t)kmalloc(1024) + 1020; // whatever
         task->regs.cs  = 0x8;
         task->regs.ds  = 0x10;
@@ -37,6 +43,9 @@ void kmain(void)
         task->regs.fs  = 0x10;
         task->regs.gs  = 0x10;
         task->state    = TASK_RUNNING;
-        sys_yield();
-        panic(PANIC_TODO);
+
+        while (true)
+        {
+                sys_yield();
+        }
 }

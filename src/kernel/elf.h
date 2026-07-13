@@ -459,4 +459,23 @@ typedef struct
 
 #include <cpu/elf.h> // elf info like what are we
 
+#if ELF_CLASS == ELFCLASS32
+
+typedef Elf32_Ehdr Elf_Ehdr;
+typedef Elf32_Phdr Elf_Phdr;
+typedef Elf32_Addr Elf_Addr;
+
+#elif ELF_CLASS == ELFCLASS64
+
+typedef Elf64_Ehdr Elf_Ehdr;
+typedef Elf64_Phdr Elf_Phdr;
+typedef Elf64_Addr Elf_Addr;
+
+#endif
+
+#include <mm/paging.h>
+#include <fs/fs.h>
+
+int elf_load(file_t *file, address_space_t *space, Elf_Addr *entry);
+
 #endif
