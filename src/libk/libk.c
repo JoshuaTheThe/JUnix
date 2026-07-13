@@ -91,6 +91,11 @@ uintptr_t syscall5(uint32_t nr,
         return ret;
 }
 
+int fork(void)
+{
+        return syscall0(SYS_FORK);
+}
+
 void exit(int code)
 {
         __asm volatile (

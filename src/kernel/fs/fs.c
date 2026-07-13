@@ -1,4 +1,7 @@
 #include <fs/fs.h>
+#include <fs/fat/fat.h>
+#include <fs/ufs/ufs.h>
+#include <fs/ramfs/ramfs.h>
 #include <fs/dir.h>
 #include <string.h>
 #include <mm/alloc.h>
@@ -9,6 +12,22 @@
 vnode_t *root_vnode = NULL;
 
 filesystem_t ramfs = {0};
+
+filesystem_t file_systems[MAX_FILE_SYSTEMS] = {0};
+size_t       file_systems_count=0;
+
+filesystem_t *get_file_system(char *name)
+{
+        for (size_t i = 0; i < file_systems_count; ++i)
+        {
+                if (!strcmp(name, file_systems[i].name))
+                {
+                        return &file_systems[i];
+                }
+        }
+
+        return NULL;
+}
 
 int vfs_init(void)
 {
@@ -24,6 +43,10 @@ int vfs_init(void)
                 LOG(" [krnl] could not create ramfs\r\n");
                 panic(PANIC_TODO);
         }
+
+        file_systems[file_systems_count++] = fat_create_fs();
+        file_systems[file_systems_count++] = ufs_create_fs();
+        file_systems[file_systems_count++] = ramfs_create_fs();
         return 0;
 }
 

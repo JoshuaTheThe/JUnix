@@ -76,7 +76,9 @@ task_t *task_create(proc_t *proc);
 void    proc_kill(proc_t *); // clear, remove from ll
 void    proc_clear(proc_t *); // clear all mappings, and registers, .., also suspend
 
+int proc_open_direct(proc_t *proc, vnode_t *node, int flags, int mode);
 int proc_open(proc_t *proc, char *path, int flags, int mode);
 void proc_close(proc_t *proc, int fd);
+int task_index(task_t *task, proc_t *proc);
 
 #endif

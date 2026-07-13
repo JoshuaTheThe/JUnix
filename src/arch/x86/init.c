@@ -54,11 +54,11 @@ void init(int m, uintptr_t a)
                 }
         }
 
-        filesystem_t fs = fat_create_fs();
+        filesystem_t *fs = get_file_system("fat");
         vnode_t *node;
         if (vfs_lookup("/dev/ide0p0", &node) < 0)
                 panic(PANIC_TODO);
-        if (vfs_mount("/mnt", &fs, node) < 0)
+        if (vfs_mount("/mnt", fs, node) < 0)
                 panic(PANIC_TODO);
 
         file_t *rtc;

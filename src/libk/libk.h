@@ -10,6 +10,7 @@ int write(int fd, const void *buf, size_t len);
 int read(int fd, void *buf, size_t len);
 int open(char *path, int flags);
 void close(int fd);
+int fork(void);
 
 uintptr_t syscall0(uint32_t nr);
 uintptr_t syscall1(uint32_t nr, uintptr_t a);

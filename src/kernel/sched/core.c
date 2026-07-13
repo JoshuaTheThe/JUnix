@@ -84,33 +84,37 @@ void proc_kill(proc_t *proc)
         }
 }
 
+int task_index(task_t *task, proc_t *proc)
+{
+        size_t task_index = task - proc->tasks;
+        if (task_index > MAX_TASKS)
+                return -1;
+        return task_index;
+}
+
 void sched_next(void)
 {
-    for (;;)
-    {
-        size_t task_index = current_task - current_proc->tasks;
-
-        if (task_index + 1 < current_proc->taskcount)
+        for (;;)
         {
-            current_task = &current_proc->tasks[task_index + 1];
+                size_t task_index = current_task - current_proc->tasks;
+                if (task_index + 1 < current_proc->taskcount)
+                {
+                        current_task = &current_proc->tasks[task_index + 1];
+                }
+                else
+                {
+                        current_proc = current_proc->next;
+                        if (!current_proc)
+                                current_proc = processes;
+                        if (current_proc->taskcount == 0)
+                                continue;
+                        current_task = &current_proc->tasks[0];
+                }
+                if (current_task->state == TASK_RUNNING)
+                        break;
         }
-        else
-        {
-            current_proc = current_proc->next;
-            if (!current_proc)
-                current_proc = processes;
 
-            if (current_proc->taskcount == 0)
-                continue;
-
-            current_task = &current_proc->tasks[0];
-        }
-
-        if (current_task->state == TASK_RUNNING)
-            break;
-    }
-
-    ackint();
+        ackint();
 }
 
 void sched_load(void)
@@ -139,10 +143,46 @@ void sched_init(void)
         LOG(" [proc] OK\r\n");
 }
 
+int proc_open_direct(proc_t *proc, vnode_t *node, int flags, int mode)
+{
+        size_t fd = 0;
+        if (!proc->fd.items)
+        {
+                goto new;
+        }
+
+        for (fd = 0; fd < proc->fd.capacity; ++fd)
+        {
+                if (!proc->fd.items[fd])
+                {
+                        goto open;
+                }
+        }
+
+new:
+        if (fd == proc->fd.capacity || !proc->fd.items)
+        {
+                void *new = kmalloc(proc->fd.capacity + 8 * sizeof(file_t *));
+                if (proc->fd.capacity > 0 && proc->fd.items)
+                {
+                        memcpy(new, proc->fd.items, proc->fd.capacity * sizeof(file_t *));
+                        kfree(proc->fd.items);
+                }
+                proc->fd.capacity += 8;
+                proc->fd.items = new;
+                fd = proc->fd.capacity - 8;
+        }
+
+open:
+        if (vfs_open_direct(node, &proc->fd.items[fd]) < 0)
+                return -1;
+        proc->fd.items[fd]->flags = flags;
+        proc->fd.items[fd]->mode  = mode;
+        return fd;
+}
+
 int proc_open(proc_t *proc, char *path, int flags, int mode)
 {
-        (void)flags;
-        (void)mode;
         size_t fd = 0;
         if (!proc->fd.items)
         {
@@ -174,6 +214,8 @@ new:
 open:
         if (vfs_open(path, &proc->fd.items[fd]) < 0)
                 return -1;
+        proc->fd.items[fd]->flags = flags;
+        proc->fd.items[fd]->mode  = mode;
         return fd;
 }
 

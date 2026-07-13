@@ -30,6 +30,7 @@ void kmain(void)
         kprint("%s\r\n", buffer);
         kfree(buffer);
         close(fd);
+
         proc_t *proc   = proc_create();
         address_space_t space = paging_copy_space(&kernel_address_space);
         proc->space    = &space;

@@ -46,6 +46,7 @@ typedef struct file
         vnode_t *vnode;
         long offset;
         uint32_t flags;
+        uint32_t mode;
         int refcount;
 } file_t;
 
@@ -70,7 +71,13 @@ vnode_t *vfs_mkdir(vnode_t *p, char *name, uint32_t flags);
 int vfs_readdir(file_t *f, void *buf, size_t count);
 vnode_t *vfs_create(char *parent_path, char *name, int flags);
 vnode_t *vfs_create_in(vnode_t *parent, char *name, int flags);
+filesystem_t *get_file_system(char *name);
 
 extern vnode_t *root_vnode;
+
+#define MAX_FILE_SYSTEMS (256)
+
+extern filesystem_t file_systems[MAX_FILE_SYSTEMS];
+extern size_t       file_systems_count;
 
 #endif
