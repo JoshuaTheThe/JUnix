@@ -32,8 +32,10 @@ void kmain(void)
         close(fd);
 
         proc_t *proc   = proc_create();
-        address_space_t space = paging_copy_space(&kernel_address_space);
-        proc->space    = &space;
+
+        address_space_t *space = kmalloc(sizeof(*space));
+        *space = paging_copy_space(&kernel_address_space);
+        proc->space    = space;
         task_t *task   = task_create(proc);
         task->regs.eip = (uintptr_t)exec;
         task->regs.esp = (uintptr_t)kmalloc(8192) + 8186; // whatever
@@ -45,8 +47,17 @@ void kmain(void)
         task->regs.gs  = 0x10;
         task->state    = TASK_RUNNING;
 
+        proc_t *_proc = processes;
         while (true)
         {
+                _proc = _proc->next;
+                if (!_proc)
+                        _proc = processes;
+                if (_proc->awaiting_destruction)
+                {
+                        proc_destroy(_proc);
+                        _proc = processes;
+                }
                 sys_yield();
         }
 }

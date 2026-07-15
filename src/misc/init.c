@@ -48,8 +48,8 @@ int main(void)
 
 void _start(void)
 {
-        main();
-        while(1);
+        int ret = main();
+        exit(ret);
 }
 
 // SYSCALLS

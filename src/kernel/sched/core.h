@@ -45,6 +45,7 @@ typedef struct proc_t
         vnode_t         *cwd;
         task_t           tasks[MAX_TASKS];
         size_t           taskcount;
+        bool             awaiting_destruction;
 
         struct
         {
@@ -57,7 +58,7 @@ typedef struct proc_t
 } proc_t;
 
 extern task_t         *current_task;
-extern proc_t         *current_proc;
+extern proc_t         *current_proc, *processes;
 extern task_state_registers_t scratch;
 extern uint64_t ticks_since_boot;
 
@@ -69,7 +70,8 @@ void sched_init(void);
 proc_t *proc_create(void);
 task_t *task_create(proc_t *proc);
 
-void    proc_kill(proc_t *); // clear, remove from ll
+void    proc_kill(proc_t *);
+void    proc_destroy(proc_t *);  // clear, remove from ll
 void    proc_clear(proc_t *); // clear all mappings, and registers, .., also suspend
 
 int proc_open_direct(proc_t *proc, vnode_t *node, int flags, int mode);

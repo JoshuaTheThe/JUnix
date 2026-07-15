@@ -217,15 +217,17 @@ void paging_unmap(address_space_t *as, uintptr_t virt)
         not_optional(as);
         uint32_t dir = PAGE_DIR_INDEX(virt);
         uint32_t tab = PAGE_TAB_INDEX(virt);
-
         pde_t pde = as->pd->entries[dir];
         if (!(pde & PAGE_PRESENT))
                 return;
-        LOG(" [mm] unmapping virt %x (%x)\r\n", virt, phys_to_virt(as, pde & ~0xFFF));
+        uintptr_t phys = virt_to_phys(as, (void *)virt);
+        LOG(" [mm] unmapping virt %x phys %x\r\n", virt, phys);
         remove_mapping(as, virt);
-        pmm_free((void *)virt_to_phys(as, (void *)virt));
-        page_table_t *pt = phys_to_virt(as, pde & ~0xFFF);
+        page_table_t *pt =
+            phys_to_virt(as, pde & ~0xFFF);
         pt->entries[tab] = 0;
+        if (phys)
+                pmm_free((void *)phys);
         if (paging_active && as == __space)
                 __asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
 }
@@ -264,10 +266,22 @@ void paging_init(void)
 
 void paging_clear_address_space(address_space_t *as)
 {
-        for (size_t i = 0; i < as->count; ++i)
+        while (as->count)
         {
-                if (as->items[i].virt < 0xC0000000)
-                        paging_unmap(as, as->items[i].virt);
+                bool removed = false;
+
+                for (size_t i = 0; i < as->count; i++)
+                {
+                        if (as->items[i].virt < 0xC0000000)
+                        {
+                                paging_unmap(as, as->items[i].virt);
+                                removed = true;
+                                break;
+                        }
+                }
+
+                if (!removed)
+                        break;
         }
 }
 

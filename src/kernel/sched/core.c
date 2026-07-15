@@ -7,11 +7,11 @@
 #include <panic.h>
 #include <dbg.h>
 
-static proc_t *processes    = NULL, *tail = NULL;
-static proc_t *kernel_proc  = NULL;
-static task_t *kernel_task  = NULL;
-task_t        *current_task = NULL;
-proc_t        *current_proc = NULL;
+proc_t *processes    = NULL, *tail = NULL;
+proc_t *kernel_proc  = NULL;
+task_t *kernel_task  = NULL;
+task_t *current_task = NULL;
+proc_t *current_proc = NULL;
 
 uint64_t ticks_since_boot = 0;
 
@@ -43,6 +43,7 @@ proc_t *proc_create(void)
         proc->pid           = pid++;
         proc->taskcount     = 0;
         proc->cwd           = root_vnode;
+        proc->awaiting_destruction = false;
         if (tail)
                 tail->next = proc;
         proc->prev = tail;
@@ -61,17 +62,20 @@ void proc_clear(proc_t *proc)
         }
 
         memset(&proc->fd, 0, sizeof(proc->fd));
-        if (proc->space == paging_get_address_space())
-                paging_switch(&kernel_address_space);
         paging_clear_address_space(proc->space);
         kfree(proc->space->items);
-        memset(proc->space, 0, sizeof(*proc->space));
         kfree(proc->space);
-        proc->space = NULL;
 }
 
 void proc_kill(proc_t *proc)
 {
+        proc->awaiting_destruction = true;
+}
+
+void proc_destroy(proc_t *proc)
+{
+        uint32_t f = save_flags();
+        cpu_di();
         proc_clear(proc);
         if (proc->next)
                 proc->next->prev = proc->prev;
@@ -84,6 +88,9 @@ void proc_kill(proc_t *proc)
                 while (1)
                         ;
         }
+
+        kfree(proc);
+        restore_flags(f);
 }
 
 int task_index(task_t *task, proc_t *proc)
@@ -112,7 +119,7 @@ void sched_next(void)
                                 continue;
                         current_task = &current_proc->tasks[0];
                 }
-                if (current_task->state == TASK_RUNNING)
+                if (current_task->state == TASK_RUNNING && !current_proc->awaiting_destruction)
                         break;
         }
 
@@ -131,10 +138,8 @@ void sched_save(void)
 {
         if (!current_task)
                 panic(PANIC_TODO);
-        if (override_store)
-        {
-                panic(PANIC_TODO);
-        }
+        if (override_store || current_proc->awaiting_destruction)
+                return;
         current_task->regs = scratch;
 }
 
