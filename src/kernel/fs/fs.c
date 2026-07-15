@@ -3,6 +3,7 @@
 #include <fs/ufs/ufs.h>
 #include <fs/ramfs/ramfs.h>
 #include <fs/dir.h>
+#include <sched/core.h>
 #include <string.h>
 #include <mm/alloc.h>
 #include <panic.h>
@@ -78,7 +79,9 @@ int vfs_lookup(const char *path, vnode_t **out)
                 return 0;
         }
 
-        vnode_t *current = root_vnode;
+        vnode_t *current = current_proc->cwd;
+        if (path[0] == '/')
+                current = root_vnode;
         if (*path == '/') path++;
         char segment[256];
         while (*path)

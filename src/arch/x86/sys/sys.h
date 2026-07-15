@@ -19,6 +19,13 @@ typedef enum
         SYS_WRITE,
         SYS_OPEN,
         SYS_CLOSE,
+        SYS_WAITPID,
+        SYS_CREAT,
+        SYS_LINK,
+        SYS_UNLINK,
+        SYS_EXECVE,
+        SYS_CHDIR,
+        SYS_TIME,
 
         SYS_DBGWRITE=256, // debug write
 } syscmd_t;
@@ -35,6 +42,13 @@ int  sys_open(char *, int, int);
 void sys_close(int);
 int  sys_read(int, void *, size_t);
 int  sys_write(int, void *, size_t);
+void sys_waitpid(pid_t, int *stat_addr, int opt);
+int  sys_creat(char *,int);
+int  sys_link(char *,char *);
+int  sys_unlink(char *);
+int  sys_execve(char *,char *,char *);
+int  sys_chdir(char *);
+int  sys_time(int *);
 
 int copy_from_user(void *, void *, size_t);
 int copy_to_user(void *, void *, size_t);

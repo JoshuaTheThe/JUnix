@@ -13,18 +13,19 @@ void sys_handler(void)
         task_state_registers_t *regs = &scratch;
         switch (regs->eax)
         {
-                case SYS_EXIT:  sys_exit(regs->ebx); break;
-                case SYS_FORK:  sys_fork(); break;
-                case SYS_OPEN:  regs->eax = sys_open((char *)regs->ebx, regs->ecx, regs->edx); break;
-                case SYS_CLOSE: sys_close((int)regs->ebx); break;
-                case SYS_READ:  regs->eax = sys_read((int)regs->ebx, (void*)regs->ecx, regs->edx);  break;
-                case SYS_WRITE: regs->eax = sys_write((int)regs->ebx, (void*)regs->ecx, regs->edx); break;
-
-                case SYS_DBGWRITE:
-                {
-                        kprint("%s", regs->ebx, (char *)regs->ebx);
-                        break;
-                }
+                case SYS_EXIT:    sys_exit(regs->ebx); break;
+                case SYS_FORK:    sys_fork(); break;
+                case SYS_OPEN:    regs->eax = sys_open((char *)regs->ebx, regs->ecx, regs->edx); break;
+                case SYS_CLOSE:   sys_close((int)regs->ebx); break;
+                case SYS_READ:    regs->eax = sys_read((int)regs->ebx, (void*)regs->ecx, regs->edx);  break;
+                case SYS_WRITE:   regs->eax = sys_write((int)regs->ebx, (void*)regs->ecx, regs->edx); break;
+                case SYS_WAITPID: break;
+                case SYS_CREAT:   break;
+                case SYS_LINK:    break;
+                case SYS_UNLINK:  break;
+                case SYS_EXECVE:  break;
+                case SYS_CHDIR:   break;
+                case SYS_TIME:    break;
 
                 default:
                         regs->eax = (uint32_t)-1;
