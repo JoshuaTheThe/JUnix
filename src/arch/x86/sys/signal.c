@@ -1,6 +1,7 @@
 
 #include <stdint.h>
 #include <drivers/kprint.h>
+#include <sys/signal.h>
 #include <panic.h>
 
 void divide_error_handler(void)

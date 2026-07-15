@@ -2,7 +2,7 @@
 #ifndef _LIBK_H
 #define _LIBK_H
 
-#include <interrupts/sys.h>
+#include <sys/sys.h>
 #include <panic.h>
 
 void exit(int code);

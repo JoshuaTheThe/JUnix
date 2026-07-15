@@ -179,6 +179,21 @@ void paging_map(address_space_t *as, uintptr_t virt, uintptr_t phys, uint32_t fl
         restore_flags(flags_saved);
 }
 
+bool paging_validate_address(address_space_t *as, void *p)
+{
+        not_optional(as);
+        not_optional(as->pd);
+        uint32_t dir = PAGE_DIR_INDEX(((uintptr_t)p));
+        uint32_t tbl = PAGE_TAB_INDEX(((uintptr_t)p));
+        if (!(as->pd->entries[dir] & PAGE_PRESENT)) // invalid dir
+        {
+                return false;
+        }
+
+        page_table_t *pt = phys_to_virt(as, as->pd->entries[dir] & ~0xFFF);
+        return pt->entries[tbl] & PAGE_PRESENT ? true : false;
+}
+
 bool remove_mapping(address_space_t *as, uintptr_t virt)
 {
         not_optional(as);

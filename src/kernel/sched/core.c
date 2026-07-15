@@ -220,6 +220,7 @@ open:
                 return -1;
         proc->fd.items[fd]->flags = flags;
         proc->fd.items[fd]->mode  = mode;
+        proc->fd.count += 1;
         return fd;
 }
 
@@ -230,4 +231,5 @@ void proc_close(proc_t *proc, int fd)
         file_t *file = proc->fd.items[fd];
         proc->fd.items[fd] = NULL;
         vfs_close(file);
+        proc->fd.count -= 1;
 }

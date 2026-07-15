@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #define PAGE_SIZE (4096)
 
@@ -63,6 +64,7 @@ void      paging_init(void);
 void      paging_enable(void);
 void      paging_disable(void);
 void      paging_clear_address_space(address_space_t *as);
+bool      paging_validate_address(address_space_t *as, void *p);
 
 /**
  * copy the virt address space, allocate new for phys, good for e.g. fork

@@ -1,5 +1,5 @@
 #include <cpu/idt.h>
-#include <interrupts/sys.h>
+#include <sys/sys.h>
 #include <cpu/cpu.h>
 #include <dbg.h>
 

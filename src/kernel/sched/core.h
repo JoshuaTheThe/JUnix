@@ -9,6 +9,7 @@
 #include <sched/user.h>
 #include <mm/paging.h>
 #include <fs/fs.h>
+#include <sys/signal.h>
 
 #define MAX_TASKS (16)
 
@@ -54,11 +55,6 @@ typedef struct proc_t
 
         address_space_t *space;
 } proc_t;
-
-typedef enum
-{
-        SIG_TERM,
-} sig_t;
 
 extern task_t         *current_task;
 extern proc_t         *current_proc;

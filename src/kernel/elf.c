@@ -66,7 +66,7 @@ static int elf_load_segment(
                         space,
                         addr,
                         phys,
-                        PAGE_WRITE);
+                        PAGE_WRITE | PAGE_USER); // USER for future
         }
 
         /*
