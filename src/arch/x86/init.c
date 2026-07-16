@@ -19,9 +19,12 @@
 #include <fs/fat/fat.h>
 #include <elf.h>
 #include <dbg.h>
+#include <version.h>
 
 void init(int m, uintptr_t a)
 {
+        kprint("J/Unix kernel build %d\r\n", JUNIX_BUILD);
+        LOG("-- Пойехали! --\r\n\r\n");
         cpu_di();
         cpu_init();
         if (vfs_init() != 0 || vfs_init_dev_mnt() != 0)

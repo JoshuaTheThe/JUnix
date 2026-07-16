@@ -23,7 +23,6 @@ int read(int fd, void *buf, size_t len);
 int open(char *path, int flags);
 void close(int fd);
 int fork(void);
-void debug(char *);
 
 uintptr_t syscall0(uint32_t nr);
 uintptr_t syscall1(uint32_t nr, uintptr_t a);
@@ -37,11 +36,10 @@ int main(void)
         int fd = open("/dev/serial", 0);
         if (fd < 0)
         {
-                debug("error: could not open serial device\r\n");
                 return 1;
         }
 
-        write(fd, "Hello, World!\r\n", 15);
+        write(fd, "Здравствуйте, Мир!\r\n", 35);
         close(fd);
         return 0;
 }
@@ -183,9 +181,4 @@ int open(char *path, int flags)
 void close(int fd)
 {
         syscall1(SYS_CLOSE, fd);
-}
-
-void debug(char *m)
-{
-        syscall1(SYS_DBGWRITE, (uintptr_t)m);
 }

@@ -67,6 +67,12 @@ bin/$(OUTPUT): $(OBJ)
 
 -include $(HEADER_DEPS)
 
+.PHONY: buildnum
+buildnum:
+	@if [ ! -f buildnum ]; then echo 0 > buildnum; fi
+	@echo $$(($$(cat buildnum) + 1)) > buildnum
+	@echo "#define JUNIX_BUILD $$(cat buildnum)" > src/kernel/version.h
+
 obj/%.c.o: $(SRC)/%.c
 	mkdir -p "$$(dirname $@)"
 	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@ -I $(KERNEL) -I $(SRC)/arch/$(ARCH) -I $(LIBK)
@@ -87,4 +93,5 @@ clean:
 
 .PHONY: run
 run:
+	@bash -c "cd src/misc; bash ./make.sh"
 	@bash $(ARCH_RUN_SCRIPT)
