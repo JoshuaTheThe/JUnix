@@ -9,6 +9,7 @@
 #define SEEK_CUR 1
 #define SEEK_END 2
 #define VFS_DIRECTORY 0x1
+#define MAX_PATH (128)
 
 struct vnode;
 struct file;
@@ -72,6 +73,7 @@ int vfs_readdir(file_t *f, void *buf, size_t count);
 vnode_t *vfs_create(char *parent_path, char *name, int flags);
 vnode_t *vfs_create_in(vnode_t *parent, char *name, int flags);
 filesystem_t *get_file_system(char *name);
+int split_path(char *path, char *parent, char *name);
 
 extern vnode_t *root_vnode;
 

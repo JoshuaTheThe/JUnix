@@ -16,5 +16,6 @@ char *UlToString(unsigned long Number);
 int itoa(char *dest, int n, int base, bool uppercase);
 void strncpy(void *Destination, const void *const Source, const unsigned long Len);
 void dump(void *buf, size_t n);
+char *strrchr(char *s, char chr);
 
 #endif

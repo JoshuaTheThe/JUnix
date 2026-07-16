@@ -181,3 +181,16 @@ void dump(void *b, size_t n)
         }
         kprint("\r\n");
 }
+
+char *strrchr(char *s, char chr)
+{
+        char *last = NULL;
+        while (*s)
+        {
+                if (*s == chr)
+                        last = s;
+                s++;
+        }
+
+        return last;
+}

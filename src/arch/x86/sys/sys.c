@@ -20,7 +20,7 @@ void sys_handler(void)
                 case SYS_READ:    regs->eax = sys_read((int)regs->ebx, (void*)regs->ecx, regs->edx);  break;
                 case SYS_WRITE:   regs->eax = sys_write((int)regs->ebx, (void*)regs->ecx, regs->edx); break;
                 case SYS_WAITPID: break;
-                case SYS_CREAT:   break;
+                case SYS_CREAT:   regs->eax = sys_creat((char *)regs->ebx, regs->ecx); break;
                 case SYS_LINK:    break;
                 case SYS_UNLINK:  break;
                 case SYS_EXECVE:  break;

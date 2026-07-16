@@ -32,6 +32,12 @@ void init(int m, uintptr_t a)
         rtcInit();
 
         vfs_create("/dev", "pci", 0);
+        // "special interprocess communication fs" which is just ramfs, create a file and pass the path to a created process
+        // i can implement linux like in future, but i just want something that works
+        filesystem_t *rfs = get_file_system("ramfs");
+        vnode_t *ipcnode = vfs_create("/", "ipc", 0);
+        if (vfs_mount("/ipc", rfs, ipcnode) < 0)
+                panic(PANIC_TODO);
         pciEnumerateDevices(pciRegister);
         CreateNullDevice("null");
         CreateRandomDevice("random");

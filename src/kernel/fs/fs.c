@@ -269,3 +269,28 @@ vnode_t *vfs_create_in(vnode_t *parent, char *name, int flags)
         vfs_append_child(parent, n);
         return n;
 }
+
+int split_path(char *path, char *parent, char *name)
+{
+        char *last = strrchr(path, '/');
+
+        if (!last)
+        {
+                strncpy(parent, ".", MAX_PATH);
+                strncpy(name, path, MAX_PATH);
+                return 0;
+        }
+
+        if (last == path)
+        {
+                strncpy(parent, "/", MAX_PATH);
+        }
+        else
+        {
+                *last = '\0';
+                strncpy(parent, path, MAX_PATH);
+        }
+
+        strncpy(name, last + 1, MAX_PATH);
+        return 0;
+}

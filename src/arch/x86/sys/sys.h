@@ -6,8 +6,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-
-#define MAX_PATH (128)
+#include <fs/fs.h>
 
 typedef enum
 {
