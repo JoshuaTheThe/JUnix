@@ -28,6 +28,7 @@ typedef enum
         db_integer,
         db_text,
         db_timestamp,
+        db_opaque_kernel_object,
 } db_type_t;
 
 typedef struct
@@ -37,6 +38,7 @@ typedef struct
                 int32_t integer;
                 string_id_t text;
                 uint64_t timestamp;
+                void *opaque_kernel_object;
         };
 } db_cell_t;
 
