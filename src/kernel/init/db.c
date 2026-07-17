@@ -4,7 +4,6 @@
 
 #define l(n) (sizeof((n)) / sizeof((n)[0]))
 
-static db_type_t table_devices_geometry[]      = { db_text, db_integer, db_integer, db_text };
 static db_type_t table_users_geometry[]        = { db_text, db_text, db_integer };
 static db_type_t table_applications_geometry[] = { db_text, db_text, db_integer, db_integer };
 static db_type_t table_policies_geometry[]     = { db_integer, db_text, db_integer, db_integer };
@@ -22,16 +21,6 @@ bool db_init(void)
 
         LOG(" [db] creating system database\r\n");
         vnode_t *system_database = db_create_db(node, "sys", 0);
-
-        /** KNOWN DEVICES
-          * +-NAME----+--TYPE--+--DRIVER--+--PATH--+
-          * | kbd | input  | ps2          | /dev/kbd
-          * | ide | block  | ide          | /dev/ide0
-          */
-        LOG(" [db] creating 'devices' table\r\n");
-        tabl_id_t devices = db_create_table(system_database, "devices");
-        if (!db_set_table_geometry(system_database, devices, l(table_devices_geometry), table_devices_geometry))
-                return false;
 
         /**
           * +-USERNAME-+-PASSWRDHASH-+--POLICY--+
