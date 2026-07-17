@@ -3,7 +3,7 @@
 #include <cpu/cpu.h>
 #include <fs/fs.h>
 #include <mm/alloc.h>
-#include <drivers/pci.h>
+#include <drivers/pci/pci.h>
 #include <math.h>
 #include <fs/part.h>
 

@@ -34,7 +34,39 @@ void vfree(uintptr_t v, size_t size)
         return;
 }
 
-__attribute__((ownership_returns(__kmalloc))) void *__kmalloc(size_t size, const char *FILE, long LINE)
+void *__krealloc(void *base, size_t siz, const char *FILE, long LINE)
+{
+        if (!base)
+                return __kmalloc(siz, FILE, LINE);
+
+        if (siz == 0)
+        {
+                __kfree(base, FILE, LINE);
+                return NULL;
+        }
+
+        block_header_t *old_header =
+                (block_header_t *)(
+                        (uintptr_t)base - sizeof(block_header_t)
+                );
+
+        size_t old_size = old_header->size;
+
+        void *new = __kmalloc(siz, FILE, LINE);
+
+        if (!new)
+                return NULL;
+
+        size_t copy = old_size < siz ? old_size : siz;
+
+        memcpy(new, base, copy);
+
+        __kfree(base, FILE, LINE);
+
+        return new;
+}
+
+void *__kmalloc(size_t size, const char *FILE, long LINE)
 {
         (void)LINE;
         (void)FILE;
@@ -82,7 +114,7 @@ __attribute__((ownership_returns(__kmalloc))) void *__kmalloc(size_t size, const
         return (void *)(virt + sizeof(block_header_t));
 }
 
-__attribute__((ownership_takes(__kmalloc, 1))) void __kfree(void *ptr, const char *FILE, long LINE)
+void __kfree(void *ptr, const char *FILE, long LINE)
 {
         (void)LINE;
         (void)FILE;

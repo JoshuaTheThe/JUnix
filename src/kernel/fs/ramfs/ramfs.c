@@ -130,9 +130,9 @@ static void ramfs_release(vnode_t *v)
         }
 }
 
-int ramfs_mount(vnode_t *mountpoint, void *data)
+int ramfs_mount(vnode_t *mountpoint, vnode_t *source)
 {
-        (void)data;
+        (void)source;
         mountpoint->ops = &ramfs_dir_ops;
         mountpoint->children = NULL;
         mountpoint->flags |= VFS_DIRECTORY;

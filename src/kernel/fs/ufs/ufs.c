@@ -64,7 +64,7 @@ static void ufs_readfs(file_t *fil, ufs_boot_sector_t *bs)
         ufs_add_files(fil, LBA);
 }
 
-static int ufs_mount(vnode_t *n, void *param)
+static int ufs_mount(vnode_t *n, vnode_t *param)
 {
         (void)param;
         n->ops = &ufs_dir_ops;

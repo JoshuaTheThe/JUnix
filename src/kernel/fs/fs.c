@@ -8,6 +8,7 @@
 #include <mm/alloc.h>
 #include <panic.h>
 #include <fs/ramfs/ramfs.h>
+#include <db/db.h>
 #include <dbg.h>
 
 vnode_t *root_vnode = NULL;
@@ -48,6 +49,7 @@ int vfs_init(void)
         file_systems[file_systems_count++] = fat_create_fs();
         file_systems[file_systems_count++] = ufs_create_fs();
         file_systems[file_systems_count++] = ramfs_create_fs();
+        file_systems[file_systems_count++] = db_create_fs();
         return 0;
 }
 

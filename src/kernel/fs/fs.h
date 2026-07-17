@@ -54,7 +54,7 @@ typedef struct file
 typedef struct filesystem
 {
         char *name;
-        int (*mount)(vnode_t *mountpoint, void *data);
+        int (*mount)(vnode_t *mountpoint, vnode_t *source);
 } filesystem_t;
 
 int vfs_init(void);

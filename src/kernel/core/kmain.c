@@ -56,6 +56,8 @@ void kmain(void)
                 if (_proc->awaiting_destruction)
                 {
                         proc_destroy(_proc);
+                        if (_proc == proc)
+                                panic(PANIC_TODO);
                         _proc = processes;
                 }
                 sys_yield();

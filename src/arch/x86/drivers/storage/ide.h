@@ -1,7 +1,7 @@
 #ifndef IDE_H
 #define IDE_H
 
-#include <drivers/pci.h>
+#include <drivers/pci/pci.h>
 #include <interrupts/timer.h>
 #include <cpu/io.h>
 #include <dbg.h>

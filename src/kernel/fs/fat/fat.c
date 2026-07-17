@@ -445,6 +445,6 @@ filesystem_t fat_create_fs(void)
 {
         return (filesystem_t){
                 .name="fat",
-                .mount=(int (*)(vnode_t *,void*))mount,
+                .mount=mount,
         };
 }
