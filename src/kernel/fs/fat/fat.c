@@ -316,8 +316,223 @@ static int read(file_t *file, void *buf, size_t n)
         return done;
 }
 
+static void write_directory(fat_bpb_t *bt,
+                            uint32_t cluster,
+                            file_t *file,
+                            size_t entry,
+                            fat_dir_t *dir)
+{
+        uint32_t first = first_sector_for_cluster(bt, cluster);
+        size_t entries = bt->sector_size / sizeof(fat_dir_t);
+
+        size_t sec = entry / entries;
+        size_t index = entry % entries;
+
+        char sector[bt->sector_size];
+
+        vfs_lseek(file,
+                  bt->sector_size * (first + sec),
+                  SEEK_SET);
+
+        vfs_read(file, sector, sizeof(sector));
+
+        fat_dir_t *dirs = (fat_dir_t *)sector;
+        dirs[index] = *dir;
+
+        vfs_lseek(file,
+                  bt->sector_size * (first + sec),
+                  SEEK_SET);
+
+        vfs_write(file, sector, sizeof(sector));
+}
+
+static int write(file_t *file, const void *buf, size_t n)
+{
+        fat_file_location_t *location = file->vnode->private;
+        struct private *priv = location->_priv;
+
+        fat_dir_t dir = fetch_directory(&priv->bpb,
+                                        location->cluster,
+                                        priv->base,
+                                        location->index);
+
+        uint32_t first_cluster =
+                ((uint32_t)dir.entry_first_cluster_high << 16) |
+                 dir.entry_first_cluster_low;
+
+
+        uint32_t cluster_bytes =
+                priv->bpb.sector_size *
+                priv->bpb.cluster_size;
+
+
+        /*
+         * Allocate first cluster if file is empty.
+         */
+        if (first_cluster == 0)
+        {
+                first_cluster = allocate_cluster(&priv->bpb,
+                                                 priv->base);
+
+                if (!first_cluster)
+                        return -1;
+
+                dir.entry_first_cluster_high =
+                        first_cluster >> 16;
+
+                dir.entry_first_cluster_low =
+                        first_cluster & 0xffff;
+        }
+
+
+        uint32_t cluster = first_cluster;
+
+
+        /*
+         * Walk to cluster containing current offset.
+         */
+        uint32_t skip = file->offset / cluster_bytes;
+
+        for (uint32_t i = 0; i < skip; i++)
+        {
+                uint32_t next =
+                        next_cluster(&priv->bpb,
+                                     cluster,
+                                     priv->base);
+
+                if (next >= 0x0FFFFFF8)
+                {
+                        next = allocate_cluster(&priv->bpb,
+                                                priv->base);
+
+                        if (!next)
+                                return -1;
+
+                        set_cluster(&priv->bpb,
+                                    cluster,
+                                    next,
+                                    priv->base);
+                }
+
+                cluster = next;
+        }
+
+
+        uint32_t cluster_offset =
+                file->offset % cluster_bytes;
+
+
+        const uint8_t *in = buf;
+        size_t written = 0;
+
+
+        while (written < n)
+        {
+                uint32_t first_sector =
+                        first_sector_for_cluster(&priv->bpb,
+                                                 cluster);
+
+
+                uint32_t sector =
+                        first_sector +
+                        (cluster_offset /
+                         priv->bpb.sector_size);
+
+
+                uint32_t offset =
+                        cluster_offset %
+                        priv->bpb.sector_size;
+
+
+                uint8_t sector_buf[priv->bpb.sector_size];
+
+
+                vfs_lseek(priv->base,
+                          sector * priv->bpb.sector_size,
+                          SEEK_SET);
+
+                vfs_read(priv->base,
+                         sector_buf,
+                         sizeof(sector_buf));
+
+
+                size_t copy =
+                        priv->bpb.sector_size - offset;
+
+                if (copy > n - written)
+                        copy = n - written;
+
+
+                memcpy(sector_buf + offset,
+                       in + written,
+                       copy);
+
+
+                vfs_lseek(priv->base,
+                          sector * priv->bpb.sector_size,
+                          SEEK_SET);
+
+                vfs_write(priv->base,
+                          sector_buf,
+                          sizeof(sector_buf));
+
+
+                written += copy;
+                cluster_offset += copy;
+
+
+                if (cluster_offset >= cluster_bytes &&
+                    written < n)
+                {
+                        uint32_t next =
+                                next_cluster(&priv->bpb,
+                                             cluster,
+                                             priv->base);
+
+                        if (next >= 0x0FFFFFF8)
+                        {
+                                next = allocate_cluster(&priv->bpb,
+                                                        priv->base);
+
+                                if (!next)
+                                        break;
+
+                                set_cluster(&priv->bpb,
+                                            cluster,
+                                            next,
+                                            priv->base);
+                        }
+
+                        cluster = next;
+                        cluster_offset = 0;
+                }
+        }
+
+
+        /*
+         * Extend file size if necessary.
+         */
+        uint32_t new_size = file->offset + written;
+
+        if (new_size > dir.size)
+                dir.size = new_size;
+
+
+        write_directory(&priv->bpb,
+                        location->cluster,
+                        priv->base,
+                        location->index,
+                        &dir);
+
+
+        file->offset += written;
+
+        return written;
+}
+
 static file_ops_t ops = {
         .read = read,
+        .write = write,
 };
 
 static uint32_t dir_cluster = 0;

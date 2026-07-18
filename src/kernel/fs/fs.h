@@ -27,6 +27,7 @@ typedef struct file_ops
         long (*lseek)(struct file *f, long offset, int whence);
         void (*release)(struct vnode *v); // called when refcount == 0
         void (*capture)(struct vnode *v); // called when refcount goes from == 0 to > 0
+        int (*truncate)(struct vnode *v);
 } file_ops_t;
 
 typedef struct vnode
@@ -66,6 +67,7 @@ int vfs_close(file_t *f);
 int vfs_lookup(const char *path, vnode_t **out);
 int vfs_read(file_t *f, void *buf, size_t count);
 int vfs_write(file_t *f, const void *buf, size_t count);
+int vfs_truncate(file_t *f);
 long vfs_lseek(file_t *f, long offset, int whence);
 void vfs_append_child(vnode_t *f, vnode_t *x);
 vnode_t *vfs_mkdir(vnode_t *p, char *name, uint32_t flags);
