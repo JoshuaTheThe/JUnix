@@ -28,7 +28,7 @@
 #include <init/db.h>
 #include <init/pci.h>
 
-void init(int m, uintptr_t a)
+void oldinit(int m, uintptr_t a)
 {
         kprint("J/Unix kernel build %d\r\n", JUNIX_BUILD);
         LOG("-- Пойехали! --\r\n\r\n");
