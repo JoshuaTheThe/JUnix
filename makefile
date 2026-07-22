@@ -19,7 +19,7 @@ override CPPFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.cpp' | se
 override ASFILES := $(shell find $(KERNEL)/ -type f -name '*.s' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 override ASFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.s' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 
-override KCC := clang
+override KCC := clang++
 override KCPPC := clang++
 override KAS := clang
 override KLD := ld.lld
