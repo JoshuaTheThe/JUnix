@@ -4,10 +4,12 @@
 #include <mm/alloc.h>
 #include <string.h>
 #include <panic.h>
+#include <drivers/kprint.h>
 
 void sys_exit(int code)
 {
         (void)code;
+        kprint(" [sys] exiting with code %d\r\n", code);
         proc_kill(current_proc);
         cpu_ei();
         while(1)

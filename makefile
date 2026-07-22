@@ -11,6 +11,11 @@ override OUTPUT := junix
 override CFILES := $(shell find $(KERNEL)/ -type f -name '*.c' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 override CFILES += $(shell find $(LIBK)/ -type f -name '*.c' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 override CFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.c' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
+
+override CPPFILES := $(shell find $(KERNEL)/ -type f -name '*.cpp' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
+override CPPFILES += $(shell find $(LIBK)/ -type f -name '*.cpp' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
+override CPPFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.cpp' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
+
 override ASFILES := $(shell find $(KERNEL)/ -type f -name '*.s' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 override ASFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.s' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 
@@ -36,7 +41,7 @@ override KCFLAGS += \
     -c \
     -ffreestanding \
     -fno-builtin \
-    $(ARCH_CFLAGS) \
+    $(ARCH_CFLAGS)
     #-Werror
 
 override ASFLAGS += \
@@ -50,12 +55,14 @@ override KLDFLAGS += \
 
 override OUTPUT := $(OUTPUT)$(ARCH_OUTPUT_SUFFIX)
 override COBJ := $(addprefix obj/boot/,$(CFILES:.c=.c.o))
+override CPPOBJ := $(addprefix obj/boot/,$(CPPFILES:.cpp=.cpp.o))
 override ASOBJ := $(addprefix obj/boot/,$(ASFILES:.s=.s.o))
 
-OBJ := $(ASOBJ) $(COBJ)
+OBJ := $(ASOBJ) $(COBJ) $(CPPOBJ)
 
 override HEADER_DEPS := $(addprefix obj/boot/,$(CFILES:.c=.c.d))
 override HEADER_DEPS += $(addprefix obj/boot/,$(CFILES:.C=.C.d))
+override HEADER_DEPS += $(addprefix obj/boot/,$(CFILES:.cpp=.cpp.d))
 
 .PHONY: all
 all: bin/boot/$(OUTPUT)
@@ -88,6 +95,10 @@ jwm: libc
 obj/boot/%.c.o: $(SRC)/%.c
 	mkdir -p "$$(dirname $@)"
 	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@ -I $(KERNEL) -I $(SRC)/arch/$(ARCH) -I $(LIBK)
+
+obj/boot/%.cpp.o: $(SRC)/%.cpp
+	mkdir -p "$$(dirname $@)"
+	$(KCPPC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@ -I $(KERNEL) -I $(SRC)/arch/$(ARCH) -I $(LIBK) -fno-exceptions -fno-rtti
 
 obj/boot/%.s.o: $(SRC)/%.s
 	mkdir -p "$$(dirname $@)"

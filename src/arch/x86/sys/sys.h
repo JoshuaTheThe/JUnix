@@ -31,7 +31,9 @@ typedef enum
         SYS_STAT,
         SYS_LSEEK,
 
-        SYS_DBGWRITE=256, // debug write
+        // temporary
+        SYS_MAP = 0x100000, // map(virt, flags)
+        SYS_UMAP,           // umap(virt)
 } syscmd_t;
 
 void sys_handler(void);

@@ -6,7 +6,7 @@
 #include <string.h>
 #include <dbg.h>
 
-struct private
+struct priv
 {
         fat_bpb_t bpb;
         file_t   *base;
@@ -257,8 +257,8 @@ static int iterate_directory(fat_bpb_t *bt, uint32_t dir, file_t *file, int (*ca
 
 static int read(file_t *file, void *buf, size_t n)
 {
-        fat_file_location_t *location = file->vnode->private;
-        struct private *priv = location->_priv;
+        fat_file_location_t *location = file->vnode->priv;
+        struct priv *priv = location->_priv;
         fat_dir_t dir = fetch_directory(&priv->bpb,
                                     location->cluster,
                                     priv->base,
@@ -348,8 +348,8 @@ static void write_directory(fat_bpb_t *bt,
 
 static int write(file_t *file, const void *buf, size_t n)
 {
-        fat_file_location_t *location = file->vnode->private;
-        struct private *priv = location->_priv;
+        fat_file_location_t *location = file->vnode->priv;
+        struct priv *priv = location->_priv;
 
         fat_dir_t dir = fetch_directory(&priv->bpb,
                                         location->cluster,
@@ -537,7 +537,7 @@ static file_ops_t ops = {
 
 static uint32_t dir_cluster = 0;
 static vnode_t *current_parent = NULL;
-static struct private *_priv = NULL;
+static struct priv *_priv = NULL;
 
 static char tolower(char x)
 {
@@ -591,10 +591,10 @@ static int add_file(uint32_t clus, fat_dir_t *dir, size_t index)
         vnode_t *save = current_parent;
         vnode_t *node = vfs_create_in(current_parent, name, 0);
         node->ops = &ops;
-        node->private = kmalloc(sizeof(fat_file_location_t));
-        ((fat_file_location_t *)node->private)->_priv   = _priv;
-        ((fat_file_location_t *)node->private)->cluster = clus;
-        ((fat_file_location_t *)node->private)->index   = index;
+        node->priv = kmalloc(sizeof(fat_file_location_t));
+        ((fat_file_location_t *)node->priv)->_priv   = _priv;
+        ((fat_file_location_t *)node->priv)->cluster = clus;
+        ((fat_file_location_t *)node->priv)->index   = index;
         int res = 0;
         if (dir->flags & FAT_DIRECTORY)
         {
@@ -617,13 +617,13 @@ static int add_file(uint32_t clus, fat_dir_t *dir, size_t index)
 static int mount(vnode_t *node, vnode_t *in)
 {
         current_parent = node;
-        struct private *priv = kmalloc(sizeof(*priv));
+        struct priv *priv = kmalloc(sizeof(*priv));
         if (vfs_open_direct(in, &priv->base) < 0)
                 return -1;
         _priv = priv;
         priv->bpb = read_boot_sector(priv->base);
         priv->type = identify(&priv->bpb);
-        node->private = priv;
+        node->priv = priv;
         if (priv->type != FAT_32)
         {
                 LOG(" [krnl] error: fat of type %d provided, only supports fat32, dumping bt\r\n", priv->type);

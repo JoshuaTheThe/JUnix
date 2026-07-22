@@ -32,6 +32,10 @@ typedef enum
         SYS_STAT,
         SYS_LSEEK,
 
+        // temporary
+        SYS_MAP = 0x100000, // map(virt, flags)
+        SYS_UMAP,           // umap(virt)
+
         SYS_DBGWRITE=256, // debug write
 } syscmd_t;
 
@@ -44,6 +48,22 @@ int open3(const char *const path, int flags, int mode);
 int lseek(int fd, int off, int whence);
 void close(int fd);
 int fork(void);
+
+#define PAGE_SIZE 4096
+
+void *map(void *virt, int flags);
+void umap(void *virt);
+
+typedef struct header
+{
+        size_t pages;
+} header_t;
+
+static inline size_t align_up(size_t x, size_t a)
+{ return (x + a - 1) & ~(a - 1); }
+
+void *malloc(size_t bytes);
+void  free(void *);
 
 uintptr_t syscall0(uint32_t nr);
 uintptr_t syscall1(uint32_t nr, uintptr_t a);

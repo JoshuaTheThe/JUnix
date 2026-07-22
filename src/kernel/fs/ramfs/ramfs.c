@@ -44,7 +44,7 @@ typedef struct ramfs_file
 static int ramfs_read(file_t *f, void *buf, size_t count)
 {
         vnode_t *v = f->vnode;
-        ramfs_file_t *rf = v->private;
+        ramfs_file_t *rf = v->priv;
         if (!rf || (size_t)f->offset >= rf->size) return 0;
         size_t available = rf->size - f->offset;
         size_t to_read = count < available ? count : available;
@@ -56,12 +56,12 @@ static int ramfs_read(file_t *f, void *buf, size_t count)
 static int ramfs_write(file_t *f, const void *buf, size_t count)
 {
         vnode_t *v = f->vnode;
-        ramfs_file_t *rf = v->private;
+        ramfs_file_t *rf = v->priv;
         if (!rf)
         {
                 rf = kmalloc(sizeof(ramfs_file_t));
                 memset(rf, 0, sizeof(ramfs_file_t));
-                v->private = rf;
+                v->priv = rf;
         }
     
         size_t new_end = f->offset + count;
@@ -102,7 +102,7 @@ int ramfs_close(file_t *f)
 long ramfs_lseek(file_t *f, long offset, int whence)
 {
         vnode_t *v = f->vnode;
-        ramfs_file_t *rf = v->private;
+        ramfs_file_t *rf = v->priv;
         long new_offset;
         switch (whence)
         {
@@ -122,7 +122,7 @@ long ramfs_lseek(file_t *f, long offset, int whence)
 
 static void ramfs_release(vnode_t *v)
 {
-        ramfs_file_t *rf = v->private;
+        ramfs_file_t *rf = v->priv;
         if (rf)
         {
                 if (rf->data) kfree(rf->data);

@@ -8,14 +8,14 @@ if grub-file --is-x86-multiboot2 bin/boot/junix_x86.o; then
     cp src/arch/x86/grub.cfg bin/boot/grub/grub.cfg
     
     # Create HDD image instead of ISO
-    dd if=/dev/zero of=bin/junix_x86.hdd bs=1M count=32
+    dd if=/dev/zero of=junix_x86.hdd bs=1M count=32
     
     # Partition and format (using parted and mkfs)
-    parted -s bin/junix_x86.hdd mklabel msdos
-    parted -s bin/junix_x86.hdd mkpart primary fat32 1MiB 100%
+    parted -s junix_x86.hdd mklabel msdos
+    parted -s junix_x86.hdd mkpart primary fat32 1MiB 100%
     
     # Setup loop device WITH PARTITION SCANNING
-    LOOP=$(sudo losetup --show -f --partscan bin/junix_x86.hdd)
+    LOOP=$(sudo losetup --show -f --partscan junix_x86.hdd)
     echo "Loop device: ${LOOP}"
     echo "Partition: ${LOOP}p1"
     
@@ -41,7 +41,7 @@ if grub-file --is-x86-multiboot2 bin/boot/junix_x86.o; then
     
     # Run QEMU with HDD
     qemu-system-x86_64 \
-    -drive file=bin/junix_x86.hdd,if=ide,index=0,format=raw \
+    -drive file=junix_x86.hdd,if=ide,index=0,format=raw \
     -m 16 \
     -debugcon stdio \
     -no-reboot \

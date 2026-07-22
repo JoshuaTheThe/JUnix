@@ -37,7 +37,7 @@ typedef struct vnode
         struct vnode *next;
         struct vnode *prev;
         struct vnode *children;
-        void *private;           // driver-specific data (e.g., inode number)
+        void *priv;           // driver-specific data (e.g., inode number)
         file_ops_t *ops;
         uint32_t flags;
         int refcount;

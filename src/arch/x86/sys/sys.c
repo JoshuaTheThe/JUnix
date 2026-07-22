@@ -32,6 +32,9 @@ void sys_handler(void)
                 case SYS_STAT:    break;
                 case SYS_LSEEK:   sys_lseek(regs->ebx, regs->ecx, regs->edx); break;
 
+                case SYS_MAP:     paging_map(current_proc->space, regs->ebx, virt_to_phys(&kernel_address_space, pmm_alloc()), regs->ecx); break;
+                case SYS_UMAP:    paging_unmap(current_proc->space, regs->ebx); break;
+
                 default:
                         regs->eax = (uint32_t)-1;
                 case SYS_NOOP:

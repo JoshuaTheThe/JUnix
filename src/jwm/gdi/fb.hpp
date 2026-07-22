@@ -4,9 +4,9 @@
 
 typedef struct
 {
-        uint64_t __base; // kernel only
-        uint32_t width;
-        uint32_t height;
+        uint64_t _; // kernel only
+        uint32_t w;
+        uint32_t h;
         uint8_t  bpp;
-        uint32_t pitch;
+        uint32_t p;
 } fb_t;

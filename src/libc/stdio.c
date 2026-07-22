@@ -6,8 +6,11 @@ extern void init_memory(void);
 extern void init_rt(void);
 extern void shutdown(void);
 
+uintptr_t __heap_next;
+
 void _start(void)
 {
+        __heap_next = 0xA0000000;
         init_memory();
         init_rt();
         int ret = main(0, NULL, NULL);
@@ -157,4 +160,53 @@ void close(int fd)
 int lseek(int fd, int off, int whence)
 {
         return syscall3(SYS_LSEEK, fd, off, whence);
+}
+
+void *map(void *virt, int flags)
+{
+        if (!virt)
+        {
+                virt = (void *)__heap_next;
+                __heap_next += PAGE_SIZE;
+        }
+
+        syscall2(SYS_MAP, (uintptr_t)virt, flags);
+        return virt;
+}
+
+void umap(void *virt)
+{
+        syscall1(SYS_UMAP, (uintptr_t)virt);
+}
+
+void *malloc(size_t bytes)
+{
+        if (bytes == 0)
+                return NULL;
+        size_t total = align_up(sizeof(header_t) + bytes, PAGE_SIZE);
+        size_t pages = total / PAGE_SIZE;
+        header_t *h = map(NULL, 0);
+        if (!h)
+                return NULL;
+        for (size_t i = 1; i < pages; i++)
+        {
+                if (!map((char *)h + i * PAGE_SIZE, 0))
+                {
+                        while (i--)
+                                umap((char *)h + i * PAGE_SIZE);
+                        return NULL;
+                }
+        }
+
+        h->pages = pages;
+        return h + 1;
+}
+
+void free(void *ptr)
+{
+        if (!ptr)
+                return;
+        header_t *h = (header_t *)ptr - 1;
+        for (size_t i = 0; i < h->pages; i++)
+                umap((char *)h + i * PAGE_SIZE);
 }

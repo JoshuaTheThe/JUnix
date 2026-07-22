@@ -37,31 +37,33 @@ struct multiboot_tag_framebuffer
 
 static int fb_read(file_t *file, void *buf, size_t count)
 {
-        fb_t *fb = (fb_t *)file->vnode->private;
+        fb_t *fb = (fb_t *)file->vnode->priv;
         if (!fb || !buf || count == 0)
                 return -1;
         size_t fb_size = fb->p * fb->h;
         if (count > fb_size)
                 count = fb_size;
         memcpy(buf, &((char *)fb->base)[file->offset], count);
+        file->offset += count;
         return count;
 }
 
 static int fb_write(file_t *file, const void *buf, size_t count)
 {
-        fb_t *fb = (fb_t *)file->vnode->private;
+        fb_t *fb = (fb_t *)file->vnode->priv;
         if (!fb || !buf || count == 0)
                 return -1;
         size_t fb_size = fb->p * fb->h;
         if (count > fb_size-file->offset)
                 count = fb_size;
         memcpy(&((char *)fb->base)[file->offset], buf, count);
+        file->offset += count;
         return count;
 }
 
 static int fb_info_read(file_t *file, void *buf, size_t count)
 {
-        fb_t *fb = (fb_t *)file->vnode->private;
+        fb_t *fb = (fb_t *)file->vnode->priv;
         if (!fb || !buf)
                 return -1;
         if (count > sizeof(*fb))
@@ -143,10 +145,10 @@ void fb_init(int magic, uintptr_t addr)
 
                         vnode_t *fb_vn = vfs_create("/dev", "fb", 0);
                         fb_vn->ops = &fb_ops;
-                        fb_vn->private = kmalloc(sizeof(fb_t));
-                        if (!fb_vn->private)
+                        fb_vn->priv = kmalloc(sizeof(fb_t));
+                        if (!fb_vn->priv)
                                 panic(PANIC_TODO);
-                        fb_t *fb = fb_vn->private;
+                        fb_t *fb = fb_vn->priv;
                         fb->base = base;
                         fb->w = width;
                         fb->h = height;
@@ -155,7 +157,7 @@ void fb_init(int magic, uintptr_t addr)
                         
                         vnode_t *info_vn = vfs_create("/dev", "fb-info", 0);
                         info_vn->ops = &fb_info_ops;
-                        info_vn->private = fb;
+                        info_vn->priv = fb;
                         LOG(" [fb] Framebuffer initialized: %dx%d@%d bpp, base=0x%x\r\n",
                                width, height, bpp, base);
                         break;

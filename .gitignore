@@ -3,3 +3,4 @@ obj
 .vscode
 src/symbols.c
 qemu.log
+*.hdd

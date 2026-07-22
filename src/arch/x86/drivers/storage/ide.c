@@ -12,9 +12,9 @@ uint8_t package[2048], atapi_packet[2048];
 
 static int read(file_t *f, void *buf, size_t count)
 {
-        if (!f || !buf || !f->vnode || !f->vnode->private)
+        if (!f || !buf || !f->vnode || !f->vnode->priv)
                 return -1;
-        int drive = *(int *)f->vnode->private;
+        int drive = *(int *)f->vnode->priv;
         size_t lba = f->offset >> 9;
         size_t off = f->offset & 511;
         uint8_t *dest = (uint8_t*)buf;
@@ -325,8 +325,8 @@ void IDEInitialise(void)
 
                         vnode_t *ndev = vfs_create("/dev", clone, VFS_DIRECTORY);
                         ndev->ops = &file_ops;
-                        ndev->private = kmalloc(sizeof(int));
-                        *((int *)ndev->private) = IDEState.IDEDev[count].Drive;
+                        ndev->priv = kmalloc(sizeof(int));
+                        *((int *)ndev->priv) = IDEState.IDEDev[count].Drive;
                         search_for_partitions(ndev);
                         count++;
                 }

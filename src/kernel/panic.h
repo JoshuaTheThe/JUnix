@@ -43,7 +43,7 @@ typedef enum
         PANIC_CLASS_USERSPACE,   // Kernel bug triggered by user process (e.g. bad address)
 } panic_class_t;
 
-_Noreturn void panic_impl(const char *const File, long Line, panic_code_t Code, const char *const CodeAsStr, panic_class_t Class);
+void panic_impl(const char *const File, long Line, panic_code_t Code, const char *const CodeAsStr, panic_class_t Class);
 void list(vnode_t *node, size_t depth);
 
 #endif

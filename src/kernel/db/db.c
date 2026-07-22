@@ -53,7 +53,7 @@ filesystem_t db_create_fs(void)
 
 static db_t *db_get(vnode_t *node)
 {
-        return (db_t *)node->private;
+        return (db_t *)node->priv;
 }
 
 
@@ -83,7 +83,7 @@ vnode_t *db_create_db(vnode_t *parent, char *name, uint32_t flags)
         if (!database)
                 return NULL;
 
-        node->private = database;
+        node->priv = database;
         node->ops = &dbops;
 
         return node;

@@ -7,18 +7,18 @@
 
 static int read(file_t *f, void *buf, size_t count)
 {
-        size_t off = ((partition_t *)(f->vnode)->private)->offset + f->offset;
-        vfs_lseek(((partition_t *)(f->vnode)->private)->reference, off, SEEK_SET);
-        int r = vfs_read(((partition_t *)(f->vnode)->private)->reference, buf, count);
+        size_t off = ((partition_t *)(f->vnode)->priv)->offset + f->offset;
+        vfs_lseek(((partition_t *)(f->vnode)->priv)->reference, off, SEEK_SET);
+        int r = vfs_read(((partition_t *)(f->vnode)->priv)->reference, buf, count);
         f->offset += count;
         return r;
 }
 
 static int write(file_t *f, const void *buf, size_t count)
 {
-        size_t off = ((partition_t *)(f->vnode)->private)->offset + f->offset;
-        vfs_lseek(((partition_t *)(f->vnode)->private)->reference, off, SEEK_SET);
-        int r = vfs_write(((partition_t *)(f->vnode)->private)->reference, buf, count);
+        size_t off = ((partition_t *)(f->vnode)->priv)->offset + f->offset;
+        vfs_lseek(((partition_t *)(f->vnode)->priv)->reference, off, SEEK_SET);
+        int r = vfs_write(((partition_t *)(f->vnode)->priv)->reference, buf, count);
         f->offset += count;
         return r;
 }
@@ -57,7 +57,7 @@ int search_for_partitions(vnode_t *node)
                         part->reference = file;
                         part->offset    = parts[i].start_lba * 512;
                         node->ops       = &ops;
-                        node->private   = part;
+                        node->priv   = part;
                 }
         }
         

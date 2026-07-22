@@ -521,7 +521,7 @@ static int read(file_t *file, void *buf, size_t i)
         int a = min(i, sizeof(pci_device_t));
         not_optional(file);
         not_optional(buf);
-        memcpy(buf, ((pci_device_t *)file->vnode->private), a);
+        memcpy(buf, ((pci_device_t *)file->vnode->priv), a);
         return a;
 }
 
@@ -557,7 +557,7 @@ void pciRegister(pci_device_t *dev)
                                                    dev->subclass_id),
                                 VFS_DIRECTORY);
         node->ops = &fil;
-        node->private = dev;
+        node->priv = dev;
 }
 
 pci_device_t *pciFindOfType(uint8_t class_id, uint8_t subclass_id)

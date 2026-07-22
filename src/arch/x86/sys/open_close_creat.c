@@ -5,7 +5,7 @@
 
 int sys_open(char *path, int flags, int mode)
 {
-        char copy[MAX_PATH];
+        static char copy[MAX_PATH];
         memset(copy, 0, sizeof(copy));
         size_t len = user_strnlen(path, MAX_PATH);
         int err = copy_from_user(copy, path, len + 1);
