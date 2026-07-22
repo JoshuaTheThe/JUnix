@@ -11,7 +11,7 @@ uint32_t entry;
 void exec(void)
 {
         file_t *file;
-        if (vfs_open("/mnt/init", &file) < 0)
+        if (vfs_open("/mnt/bin/jwm.o", &file) < 0)
                 panic(PANIC_TODO);
         elf_load(file, paging_get_address_space(), &entry);
         ((void (*)(void))entry)();
@@ -22,15 +22,6 @@ void exec(void)
 void kmain(void)
 {
         cpu_ei();
-        uint8_t *buffer = kmalloc(10000);
-        int fd = open("/mnt/src/kernel/core/kmain.c", 0);
-        if (fd < 0)
-                panic(PANIC_TODO);
-        read(fd, buffer, 10000);
-        kprint("%s\r\n", buffer);
-        kfree(buffer);
-        close(fd);
-
         proc_t *proc   = proc_create();
 
         address_space_t *space = kmalloc(sizeof(*space));

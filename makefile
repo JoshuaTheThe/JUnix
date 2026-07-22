@@ -49,39 +49,51 @@ override KLDFLAGS += \
     $(ARCH_KLDFLAGS)
 
 override OUTPUT := $(OUTPUT)$(ARCH_OUTPUT_SUFFIX)
-override COBJ := $(addprefix obj/,$(CFILES:.c=.c.o))
-override ASOBJ := $(addprefix obj/,$(ASFILES:.s=.s.o))
+override COBJ := $(addprefix obj/boot/,$(CFILES:.c=.c.o))
+override ASOBJ := $(addprefix obj/boot/,$(ASFILES:.s=.s.o))
 
 OBJ := $(ASOBJ) $(COBJ)
 
-override HEADER_DEPS := $(addprefix obj/,$(CFILES:.c=.c.d))
-override HEADER_DEPS += $(addprefix obj/,$(CFILES:.C=.C.d))
+override HEADER_DEPS := $(addprefix obj/boot/,$(CFILES:.c=.c.d))
+override HEADER_DEPS += $(addprefix obj/boot/,$(CFILES:.C=.C.d))
 
 .PHONY: all
-all: bin/$(OUTPUT)
+all: bin/boot/$(OUTPUT)
 
-bin/$(OUTPUT): $(OBJ)
+bin/boot/$(OUTPUT): $(OBJ)
 	mkdir -p "$$(dirname $@)"
 	$(KLD) $(OBJ) $(KLDFLAGS) -o $@ -T $(ARCH_LINKER_SCRIPT) 
 	@echo " [INFO] Built $(OUTPUT) for architecture $(ARCH)"
 
 -include $(HEADER_DEPS)
 
-.PHONY: buildnum
+.PHONY: buildnum jwm libc
 buildnum:
 	@if [ ! -f buildnum ]; then echo 0 > buildnum; fi
 	@echo $$(($$(cat buildnum) + 1)) > buildnum
 	@echo "#define JUNIX_BUILD $$(cat buildnum)" > src/kernel/version.h
 
-obj/%.c.o: $(SRC)/%.c
+libc:
+	mkdir -p "bin/bin"
+	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $(SRC)/libc/stdio.c -o $(BIN)/bin/libc.o -I $(SRC)/libc
+
+jwm: libc
+	mkdir -p "bin/bin"
+	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $(SRC)/jwm/main.c -o $(BIN)/bin/jwm.to -I $(SRC)/libc -I $(SRC)/jwm  -nostdlib
+	$(KLD) $(BIN)/bin/jwm.to $(BIN)/bin/libc.o -o $(BIN)/bin/jwm.o -nostdlib $(KLDFLAGS)
+	rm $(BIN)/bin/jwm.to
+
+# Kernel shit
+
+obj/boot/%.c.o: $(SRC)/%.c
 	mkdir -p "$$(dirname $@)"
 	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@ -I $(KERNEL) -I $(SRC)/arch/$(ARCH) -I $(LIBK)
 
-obj/%.s.o: $(SRC)/%.s
+obj/boot/%.s.o: $(SRC)/%.s
 	mkdir -p "$$(dirname $@)"
 	$(KAS) $(ASFLAGS) -c $< -o $@
 
-obj/%.s.o: $(SRC)/%.s
+obj/boot/%.s.o: $(SRC)/%.s
 	mkdir -p "$$(dirname $@)"
 	$(KAS) $(ASFLAGS) -c $< -o $@
 
@@ -93,5 +105,4 @@ clean:
 
 .PHONY: run
 run:
-	@bash -c "cd src/misc; bash ./make.sh"
 	@bash $(ARCH_RUN_SCRIPT)
