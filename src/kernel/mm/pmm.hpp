@@ -11,7 +11,7 @@ extern "C"
 class PhysicalMemoryManager
 {
 private:
-  uint8_t   bitmap[TOTAL_BITMAP >> 3] = {0};
+  uint64_t  bitmap[TOTAL_BITMAP >> 6] = {0};
   uintptr_t physstart;
   size_t    hint = 0;
 public:
@@ -27,8 +27,8 @@ private:
   int FindFreePage(size_t);
   
   inline void SetBit(size_t row, size_t col)
-  { this->bitmap[row] |=  (uint8_t)(1u<<col); }
+  { this->bitmap[row] |=  (uint64_t)(1u<<col); }
   
   inline void ClearBit(size_t row, size_t col)
-  { this->bitmap[row] &= ~(uint8_t)(1u<<col); }
+  { this->bitmap[row] &= ~(uint64_t)(1u<<col); }
 };
