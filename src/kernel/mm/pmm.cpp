@@ -24,19 +24,28 @@ size_t PhysicalMemoryManager::Remaining(void) const
   return free;
 }
 
-int PhysicalMemoryManager::FindFreePage(void)
+int PhysicalMemoryManager::FindFreePage(size_t starting_from)
 {
-  for(size_t i=0; i<TOTAL_BITMAP; ++i)
+  for(size_t i=starting_from; i<TOTAL_BITMAP; ++i)
   {
     const size_t byte = i >> 3;
     const size_t bit  = i &  7;
     if(!(this->bitmap[byte]&(1<<bit)))
     {
+      hint = i + 1;
       return i;
     }
   }
 
   return -1;
+}
+
+int PhysicalMemoryManager::FindFreePage(void)
+{
+  int n = this->FindFreePage(this->hint);
+  if (n > 0)
+    return n;
+  return this->FindFreePage(0);
 }
 
 void PhysicalMemoryManager::Free(uintptr_t addr)

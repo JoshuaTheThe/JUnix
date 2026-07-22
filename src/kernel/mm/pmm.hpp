@@ -13,6 +13,7 @@ class PhysicalMemoryManager
 private:
   uint8_t   bitmap[TOTAL_BITMAP >> 3] = {0};
   uintptr_t physstart;
+  size_t    hint = 0;
 public:
   PhysicalMemoryManager(uintptr_t phys)
     : physstart(phys)
@@ -23,6 +24,7 @@ public:
   size_t Remaining(void) const;
 private:
   int FindFreePage(void);
+  int FindFreePage(size_t);
   
   inline void SetBit(size_t row, size_t col)
   { this->bitmap[row] |=  (uint8_t)(1u<<col); }
