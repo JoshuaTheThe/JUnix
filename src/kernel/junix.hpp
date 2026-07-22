@@ -1,10 +1,7 @@
-
-#ifndef _JUNIX_H
-#define _JUNIX_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #define PROCEDURAL extern "C"
-
-#endif
