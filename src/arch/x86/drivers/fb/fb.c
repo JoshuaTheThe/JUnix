@@ -43,7 +43,7 @@ static int fb_read(file_t *file, void *buf, size_t count)
         size_t fb_size = fb->p * fb->h;
         if (count > fb_size)
                 count = fb_size;
-        memcpy(buf, (void *)fb->base, count);
+        memcpy(buf, &((char *)fb->base)[file->offset], count);
         return count;
 }
 
@@ -53,9 +53,9 @@ static int fb_write(file_t *file, const void *buf, size_t count)
         if (!fb || !buf || count == 0)
                 return -1;
         size_t fb_size = fb->p * fb->h;
-        if (count > fb_size)
+        if (count > fb_size-file->offset)
                 count = fb_size;
-        memcpy((void *)fb->base, buf, count);
+        memcpy(&((char *)fb->base)[file->offset], buf, count);
         return count;
 }
 

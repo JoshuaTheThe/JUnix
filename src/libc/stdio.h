@@ -5,6 +5,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define SEEK_SET (0)
+#define SEEK_CUR (1)
+#define SEEK_END (2)
+
 typedef enum
 {
         // no more for now
@@ -15,15 +19,29 @@ typedef enum
         SYS_WRITE,
         SYS_OPEN,
         SYS_CLOSE,
+        SYS_WAITPID,
+        SYS_CREAT,
+        SYS_LINK,
+        SYS_UNLINK,
+        SYS_EXECVE,
+        SYS_CHDIR,
+        SYS_TIME,
+        SYS_MKNOD,
+        SYS_CHMOD,
+        SYS_LCHOWN16,
+        SYS_STAT,
+        SYS_LSEEK,
 
         SYS_DBGWRITE=256, // debug write
 } syscmd_t;
 
 // SYSCALL FORWARD DECL
 void exit(int code);
-int write(int fd, const void *buf, size_t len);
-int read(int fd, void *buf, size_t len);
-int open(char *path, int flags);
+int write(int fd, const void *const buf, size_t len);
+int read(int fd, void *const buf, size_t len);
+int open(const char *const path, int flags);
+int open3(const char *const path, int flags, int mode);
+int lseek(int fd, int off, int whence);
 void close(int fd);
 int fork(void);
 

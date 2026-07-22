@@ -43,3 +43,13 @@ int sys_creat(char *path, int mode)
                 return -EIO;
         return proc_open(current_proc, copy, 0, mode);
 }
+
+int sys_lseek(int fd, int off, int whence)
+{
+        file_t *file;
+        if (fd < 0 || fd >= (int)current_proc->fd.capacity)
+                return -EBADF;
+
+        file = current_proc->fd.items[fd];
+        return vfs_lseek(file, off, whence);
+}

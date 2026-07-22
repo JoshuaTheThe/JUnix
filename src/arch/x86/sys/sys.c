@@ -26,6 +26,11 @@ void sys_handler(void)
                 case SYS_EXECVE:  break;
                 case SYS_CHDIR:   break;
                 case SYS_TIME:    break;
+                case SYS_MKNOD:   break;
+                case SYS_CHMOD:   break;
+                case SYS_LCHOWN16:break;
+                case SYS_STAT:    break;
+                case SYS_LSEEK:   sys_lseek(regs->ebx, regs->ecx, regs->edx); break;
 
                 default:
                         regs->eax = (uint32_t)-1;

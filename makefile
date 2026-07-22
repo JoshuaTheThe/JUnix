@@ -15,6 +15,7 @@ override ASFILES := $(shell find $(KERNEL)/ -type f -name '*.s' | sed 's|^$(SRC)
 override ASFILES += $(shell find $(SRC)/arch/$(ARCH) -type f -name '*.s' | sed 's|^$(SRC)/||' | LC_ALL=C sort)
 
 override KCC := clang
+override KCPPC := clang++
 override KAS := clang
 override KLD := ld.lld
 override KCFLAGS := -pipe -Wall -Wextra -c -O0 -Wpedantic -Werror -Wno-unused-variable -Wno-unused-but-set-variable -g
@@ -33,7 +34,6 @@ include $(SRC)/arch/$(ARCH)/flags.mk
 
 override KCFLAGS += \
     -c \
-    -std=gnu11 \
     -ffreestanding \
     -fno-builtin \
     $(ARCH_CFLAGS) \
@@ -79,7 +79,7 @@ libc:
 
 jwm: libc
 	mkdir -p "bin/bin"
-	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $(SRC)/jwm/main.c -o $(BIN)/bin/jwm.to -I $(SRC)/libc -I $(SRC)/jwm  -nostdlib
+	$(KCPPC) $(KCFLAGS) $(KCPPFLAGS) -c $(SRC)/jwm/main.cpp -o $(BIN)/bin/jwm.to -I $(SRC)/libc -I $(SRC)/jwm  -nostdlib -fno-exceptions -fno-rtti
 	$(KLD) $(BIN)/bin/jwm.to $(BIN)/bin/libc.o -o $(BIN)/bin/jwm.o -nostdlib $(KLDFLAGS)
 	rm $(BIN)/bin/jwm.to
 

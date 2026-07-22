@@ -25,6 +25,11 @@ typedef enum
         SYS_EXECVE,
         SYS_CHDIR,
         SYS_TIME,
+        SYS_MKNOD,
+        SYS_CHMOD,
+        SYS_LCHOWN16,
+        SYS_STAT,
+        SYS_LSEEK,
 
         SYS_DBGWRITE=256, // debug write
 } syscmd_t;
@@ -48,6 +53,11 @@ int  sys_unlink(char *);
 int  sys_execve(char *,char *,char *);
 int  sys_chdir(char *);
 int  sys_time(int *);
+int  sys_mknod(char *filename, int mode, int dev);
+int  sys_chmod(char *filename, int mode);
+int  sys_lchown16(char *filename, int user, int group);
+int  sys_stat(char *filename, void *statbuf);
+int  sys_lseek(int fd, int off, int whence);
 
 int copy_from_user(void *, void *, size_t);
 int copy_to_user(void *, void *, size_t);

@@ -2,12 +2,19 @@
 #include <stdio.h>
 
 extern int main(int, char **argv, char **envp);
+extern void init_memory(void);
+extern void init_rt(void);
+extern void shutdown(void);
 
 void _start(void)
 {
+        init_memory();
+        init_rt();
         int ret = main(0, NULL, NULL);
+        shutdown();
         exit(ret);
 }
+
 
 // SYSCALLS
 
@@ -122,22 +129,32 @@ void exit(int code)
                 ;
 }
 
-int write(int fd, const void *buf, size_t len)
+int write(int fd, const void *const buf, size_t len)
 {
         return syscall3(SYS_WRITE, fd, (uintptr_t)buf, len);
 }
 
-int read(int fd, void *buf, size_t len)
+int read(int fd, void *const buf, size_t len)
 {
         return syscall3(SYS_READ, fd, (uintptr_t)buf, len);
 }
 
-int open(char *path, int flags)
+int open(const char *const path, int flags)
 {
         return syscall2(SYS_OPEN, (uintptr_t)path, flags);
+}
+
+int open3(const char *const path, int flags, int mode)
+{
+        return syscall3(SYS_OPEN, (uintptr_t)path, flags, mode);
 }
 
 void close(int fd)
 {
         syscall1(SYS_CLOSE, fd);
+}
+
+int lseek(int fd, int off, int whence)
+{
+        return syscall3(SYS_LSEEK, fd, off, whence);
 }
