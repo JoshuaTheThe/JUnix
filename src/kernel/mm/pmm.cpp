@@ -2,7 +2,7 @@
 /**
  * Architecture Independent PMM (Physical Memory Manager)
  * Requires:
- *    - @arch/mm/paging.h, PAGE_SIZE
+ *    - @arch/mm/vmm.hpp, VirtualMemoryManager::PAGE_SIZE
  */
 
 #include <mm/pmm.hpp>
@@ -56,10 +56,27 @@ int PhysicalMemoryManager::FindFreePage(void)
 void PhysicalMemoryManager::Free(uintptr_t addr)
 {
   const size_t index =
-    (addr - (uintptr_t)this->physstart) / PAGE_SIZE;
-  const size_t byte  = index >> 6;
-  const size_t bit   = index &  63;
-  this->ClearBit(byte, bit);
+    (addr - (uintptr_t)this->physstart) / VirtualMemoryManager::PAGE_SIZE;
+  if (!IsBitSet(index >> 6, index & 63))
+  {
+    return;
+  }
+  else if(this->refcnt[index] > 1)
+  {
+    this->refcnt[index] -= 1;
+    return;
+  }
+  else if(this->refcnt[index] == 1)
+  {
+    const size_t byte  = index >> 6;
+    const size_t bit   = index &  63;
+    this->ClearBit(byte, bit);
+    this->refcnt[index] = 0;
+  }
+  else
+  {
+    return;
+  }
 }
 
 uintptr_t PhysicalMemoryManager::Allocate(void)
@@ -70,7 +87,36 @@ uintptr_t PhysicalMemoryManager::Allocate(void)
     ::panic(PANIC_TODO);
   }
 
+  this->SetBit(index >> 6, index & 63);
+  this->refcnt[index] = 1;
   uintptr_t page =
-    ((uintptr_t)this->physstart + (index * PAGE_SIZE));
+    ((uintptr_t)this->physstart + index * VirtualMemoryManager::PAGE_SIZE);
   return page;
 }
+
+void PhysicalMemoryManager::Reference(uintptr_t phys)
+{
+  const size_t index =
+    (phys - (uintptr_t)this->physstart) / VirtualMemoryManager::PAGE_SIZE;
+  if(!IsBitSet(index >> 6, index & 63))
+    return;
+  if(refcnt[index] > 254)
+    return;
+  ++refcnt[index];
+}
+
+void PhysicalMemoryManager::SetBit(size_t row, size_t col)
+{
+  bitmap[row] |= 1ULL << col;
+}
+
+void PhysicalMemoryManager::ClearBit(size_t row, size_t col)
+{
+  bitmap[row] &= ~(1ULL << col);
+}
+
+bool PhysicalMemoryManager::IsBitSet(size_t row, size_t col)
+{
+  return bitmap[row] & (1ULL << col);
+}
+

@@ -200,6 +200,7 @@ higher_half_entry:
 
         push %ebx
         push %edx
+        cli
         call init
         call kmain
 1:      cli
