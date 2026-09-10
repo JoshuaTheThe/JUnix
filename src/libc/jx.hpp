@@ -35,12 +35,13 @@ public:
         ~File() { ::close(this->fd); }
 };
 
-static BasicFile<false> stdin;
-static BasicFile<false> stdout;
+static BasicFile<false, false, true> stdin;
+static BasicFile<false, true,  false> stdout;
 
 PROCEDURAL int init_rt(void)
 {
-        stdout = stdin = BasicFile<false>("/dev/serial");
+        stdout = BasicFile<false, true, false>("/dev/serial");
+        stdin  = BasicFile<false, false, true>("/dev/serial");
         return 0;
 }
 

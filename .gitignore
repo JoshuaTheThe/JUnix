@@ -4,3 +4,4 @@ obj
 src/symbols.c
 qemu.log
 *.hdd
+.cache

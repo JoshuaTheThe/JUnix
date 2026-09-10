@@ -43,9 +43,8 @@ if grub-file --is-x86-multiboot2 bin/boot/junix_x86.o; then
     qemu-system-x86_64 \
     -drive file=junix_x86.hdd,if=ide,index=0,format=raw \
     -m 64 \
-    -debugcon stdio \
     -no-reboot \
-    -no-shutdown
+    -no-shutdown -nographic
 else
     echo "the file is not multiboot"
 fi
