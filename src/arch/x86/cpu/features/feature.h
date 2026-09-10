@@ -1,9 +1,9 @@
 #ifndef FEATURE_H
 #define FEATURE_H
 
-#include<stdint.h>
-#include<stdbool.h>
-#include<stddef.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 void FeatureCR0Enable(uint32_t FeatureIdx);
 void FeatureCR4Enable(uint32_t FeatureIdx);

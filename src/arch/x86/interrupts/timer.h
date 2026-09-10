@@ -9,7 +9,6 @@
 #define PIC1_DATA 0x21
 #define IRQ_TIMER 0
 
-
 void kdelay(unsigned long ticks);
 void timer_init(unsigned int targetFreq);
 

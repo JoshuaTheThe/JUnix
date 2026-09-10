@@ -1,98 +1,58 @@
 
-#include <stdint.h>
 #include <drivers/kprint.h>
-#include <sys/signal.h>
 #include <panic.h>
+#include <stdint.h>
+#include <sys/signal.h>
 
-void divide_error_handler(void)
-{
-        kprint(" [sig] cant divide by zero\r\n");
+void divide_error_handler(void) { kprint(" [sig] cant divide by zero\r\n"); }
+
+void debug_exception_handler(void) { kprint(" [sig] debug exception\r\n"); }
+
+void nmi_exception_handler(void) { kprint(" [sig] nmi exception\r\n"); }
+
+void breakpoint_exception_handler(void) {
+  kprint(" [sig] breakpoint exception\r\n");
 }
 
-void debug_exception_handler(void)
-{
-        kprint(" [sig] debug exception\r\n");
+void overflow_exception_handler(void) {
+  kprint(" [sig] overflow exception\r\n");
 }
 
-void nmi_exception_handler(void)
-{
-        kprint(" [sig] nmi exception\r\n");
+void bound_exception_handler(void) { kprint(" [sig] bounds exception\r\n"); }
+
+void invalid_opcode_handler(void) { kprint(" [sig] invalid opcode\r\n"); }
+
+void device_not_available_handler(void) {
+  kprint(" [sig] device not available\r\n");
 }
 
-void breakpoint_exception_handler(void)
-{
-        kprint(" [sig] breakpoint exception\r\n");
+void double_fault_handler(void) { kprint(" [sig] double fault\r\n"); }
+
+void invalid_tss_handler(void) { kprint(" [sig] invalid tss\r\n"); }
+
+void segment_not_present_handler(void) {
+  kprint(" [sig] segment not present\r\n");
 }
 
-void overflow_exception_handler(void)
-{
-        kprint(" [sig] overflow exception\r\n");
+void stack_fault_handler(void) { kprint(" [sig] stack fault\r\n"); }
+
+void general_protection_handler(void) {
+  kprint(" [sig] general protection fault\r\n");
 }
 
-void bound_exception_handler(void)
-{
-        kprint(" [sig] bounds exception\r\n");
+void page_fault_handler(int cs, int eip) {
+  uintptr_t fault_addr;
+  __asm volatile("mov %%cr2, %0" : "=r"(fault_addr));
+  kprint(" [sig] page fault: %x, @%x:%x\r\n", fault_addr, cs, eip);
+  panic(PANIC_PAGE_FAULT);
 }
 
-void invalid_opcode_handler(void)
-{
-        kprint(" [sig] invalid opcode\r\n");
+void x87_exception_handler(void) { kprint(" [sig] x87 exception\r\n"); }
+
+void alignment_check_handler(void) { kprint(" [sig] unaligned exception\r\n"); }
+
+void machine_check_handler(void) {
+  kprint(" [sig] machine check exception\r\n");
 }
 
-void device_not_available_handler(void)
-{
-        kprint(" [sig] device not available\r\n");
-}
-
-void double_fault_handler(void)
-{
-        kprint(" [sig] double fault\r\n");
-}
-
-void invalid_tss_handler(void)
-{
-        kprint(" [sig] invalid tss\r\n");
-}
-
-void segment_not_present_handler(void)
-{
-        kprint(" [sig] segment not present\r\n");
-}
-
-void stack_fault_handler(void)
-{
-        kprint(" [sig] stack fault\r\n");
-}
-
-void general_protection_handler(void)
-{
-        kprint(" [sig] general protection fault\r\n");
-}
-
-void page_fault_handler(int cs, int eip)
-{
-        uintptr_t fault_addr;
-        __asm volatile("mov %%cr2, %0" : "=r"(fault_addr));
-        kprint(" [sig] page fault: %x, @%x:%x\r\n", fault_addr, cs, eip);
-        panic(PANIC_PAGE_FAULT);
-}
-
-void x87_exception_handler(void)
-{
-        kprint(" [sig] x87 exception\r\n");
-}
-
-void alignment_check_handler(void)
-{
-        kprint(" [sig] unaligned exception\r\n");
-}
-
-void machine_check_handler(void)
-{
-        kprint(" [sig] machine check exception\r\n");
-}
-
-void simd_exception_handler(void)
-{
-        kprint(" [sig] simd exception\r\n");
-}
+void simd_exception_handler(void) { kprint(" [sig] simd exception\r\n"); }

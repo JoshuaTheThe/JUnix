@@ -15,47 +15,44 @@ struct vnode;
 struct file;
 struct filesystem;
 
-typedef struct file_ops
-{
-        size_t (*length)(struct file *f);
-        struct vnode *(*mkdir)(struct vnode *p, char *name, uint32_t flags);
-        int (*readdir)(struct file *f, void *buf, size_t count);
-        int (*read)(struct file *f, void *buf, size_t count);
-        int (*write)(struct file *f, const void *buf, size_t count);
-        int (*open)(struct vnode *v, struct file **f);
-        int (*close)(struct file *f);
-        long (*lseek)(struct file *f, long offset, int whence);
-        void (*release)(struct vnode *v); // called when refcount == 0
-        void (*capture)(struct vnode *v); // called when refcount goes from == 0 to > 0
-        int (*truncate)(struct vnode *v);
+typedef struct file_ops {
+  size_t (*length)(struct file *f);
+  struct vnode *(*mkdir)(struct vnode *p, char *name, uint32_t flags);
+  int (*readdir)(struct file *f, void *buf, size_t count);
+  int (*read)(struct file *f, void *buf, size_t count);
+  int (*write)(struct file *f, const void *buf, size_t count);
+  int (*open)(struct vnode *v, struct file **f);
+  int (*close)(struct file *f);
+  long (*lseek)(struct file *f, long offset, int whence);
+  void (*release)(struct vnode *v); // called when refcount == 0
+  void (*capture)(
+      struct vnode *v); // called when refcount goes from == 0 to > 0
+  int (*truncate)(struct vnode *v);
 } file_ops_t;
 
-typedef struct vnode
-{
-        char *name;
-        struct vnode *parent;
-        struct vnode *next;
-        struct vnode *prev;
-        struct vnode *children;
-        void *priv;           // driver-specific data (e.g., inode number)
-        file_ops_t *ops;
-        uint32_t flags;
-        int refcount;
+typedef struct vnode {
+  char *name;
+  struct vnode *parent;
+  struct vnode *next;
+  struct vnode *prev;
+  struct vnode *children;
+  void *priv; // driver-specific data (e.g., inode number)
+  file_ops_t *ops;
+  uint32_t flags;
+  int refcount;
 } vnode_t;
 
-typedef struct file
-{
-        vnode_t *vnode;
-        long offset;
-        uint32_t flags;
-        uint32_t mode;
-        int refcount;
+typedef struct file {
+  vnode_t *vnode;
+  long offset;
+  uint32_t flags;
+  uint32_t mode;
+  int refcount;
 } file_t;
 
-typedef struct filesystem
-{
-        char *name;
-        int (*mount)(vnode_t *mountpoint, vnode_t *source);
+typedef struct filesystem {
+  char *name;
+  int (*mount)(vnode_t *mountpoint, vnode_t *source);
 } filesystem_t;
 
 int vfs_init(void);
@@ -82,6 +79,6 @@ extern vnode_t *root_vnode;
 #define MAX_FILE_SYSTEMS (256)
 
 extern filesystem_t file_systems[MAX_FILE_SYSTEMS];
-extern size_t       file_systems_count;
+extern size_t file_systems_count;
 
 #endif

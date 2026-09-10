@@ -4,7 +4,7 @@
 
 #include <mm/pmm.h>
 
-#define kfree(p)   (__kfree(p, __FILE__, __LINE__))
+#define kfree(p) (__kfree(p, __FILE__, __LINE__))
 #define kmalloc(p) (__kmalloc(p, __FILE__, __LINE__))
 #define krealloc(p, s) (__krealloc(p, s, __FILE__, __LINE__))
 

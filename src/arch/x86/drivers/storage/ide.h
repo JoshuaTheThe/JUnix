@@ -1,10 +1,10 @@
 #ifndef IDE_H
 #define IDE_H
 
-#include <drivers/pci/pci.h>
-#include <interrupts/timer.h>
 #include <cpu/io.h>
 #include <dbg.h>
+#include <drivers/pci/pci.h>
+#include <interrupts/timer.h>
 
 #define ATA_SR_BSY 0x80  // Busy
 #define ATA_SR_DRDY 0x40 // Drive ready
@@ -80,43 +80,40 @@
 #define ATA_READ 0x00
 #define ATA_WRITE 0x01
 
-typedef struct IDEDev
-{
-        uint8_t Reserved;
-        uint8_t Channel;
-        uint8_t Drive;
-        uint16_t Type;
-        uint16_t Signature;
-        uint16_t Capabilities;
-        uint32_t CommandSets;
-        uint32_t Size;
-        uint8_t Model[41];
+typedef struct IDEDev {
+  uint8_t Reserved;
+  uint8_t Channel;
+  uint8_t Drive;
+  uint16_t Type;
+  uint16_t Signature;
+  uint16_t Capabilities;
+  uint32_t CommandSets;
+  uint32_t Size;
+  uint8_t Model[41];
 } IDEDev;
 
-typedef struct IDEChannelRegisters
-{
-        unsigned short base;  // I/O Base.
-        unsigned short ctrl;  // Control Base
-        unsigned short bmide; // Bus Master IDE
-        unsigned char nIEN;   // nIEN (No Interrupt);
+typedef struct IDEChannelRegisters {
+  unsigned short base;  // I/O Base.
+  unsigned short ctrl;  // Control Base
+  unsigned short bmide; // Bus Master IDE
+  unsigned char nIEN;   // nIEN (No Interrupt);
 } IDEChannelRegisters;
 
-typedef struct
-{
-        pci_device_t *Dev;
-        IDEDev IDEDev[4];
-        IDEChannelRegisters Channels[2];
-        unsigned char Buff[2048];
-        unsigned char package[8];
-        bool Invoked;
+typedef struct {
+  pci_device_t *Dev;
+  IDEDev IDEDev[4];
+  IDEChannelRegisters Channels[2];
+  unsigned char Buff[2048];
+  unsigned char package[8];
+  bool Invoked;
 } IDEDriver_t;
 
 void IDEFind(size_t Index);
 void __attribute__((interrupt)) IDEIrq(void *);
-void IDEReadSectors(unsigned char drive, unsigned char numsects, unsigned int lba,
-                    unsigned short es, unsigned int edi);
-void IDEWriteSectors(unsigned char drive, unsigned char numsects, unsigned int lba,
-                       unsigned short es, unsigned int edi);
+void IDEReadSectors(unsigned char drive, unsigned char numsects,
+                    unsigned int lba, unsigned short es, unsigned int edi);
+void IDEWriteSectors(unsigned char drive, unsigned char numsects,
+                     unsigned int lba, unsigned short es, unsigned int edi);
 
 extern IDEDriver_t IDEState;
 

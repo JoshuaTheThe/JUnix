@@ -1,7 +1,7 @@
 #include <cpu/features/feature.h>
 #include <cpu/features/sse.h>
-#include <panic.h>
 #include <dbg.h>
+#include <panic.h>
 
 char fxsave_region[512] __attribute__((aligned(16))) = {0};
 
@@ -83,61 +83,49 @@ static char *Names[] = {
 
 bool Features[64] = {0};
 
-char *FeatureName(size_t Index)
-{
-        if (Index >= (sizeof(Names) / sizeof((Names)[0])))
-                return "UNKNOWN";
+char *FeatureName(size_t Index) {
+  if (Index >= (sizeof(Names) / sizeof((Names)[0])))
+    return "UNKNOWN";
 
-        return Names[Index];
+  return Names[Index];
 }
 
-void FeaturesInit(void)
-{
-        LOG(" [cpu] Finding Features\r\n");
-        for (size_t i = 0; i < 64; ++i)
-        {
-                size_t index = i & 31;
-                Features[i] = (i > 31) ? FeatureIsPresentECX(index) : FeatureIsPresentEDX(index);
-                if (Features[i])
-                {
-                        const char *const name = FeatureName(i);
-                        LOG(" [cpu] Feature %s\r\n", name);
-                }
-        }
+void FeaturesInit(void) {
+  LOG(" [cpu] Finding Features\r\n");
+  for (size_t i = 0; i < 64; ++i) {
+    size_t index = i & 31;
+    Features[i] =
+        (i > 31) ? FeatureIsPresentECX(index) : FeatureIsPresentEDX(index);
+    if (Features[i]) {
+      const char *const name = FeatureName(i);
+      LOG(" [cpu] Feature %s\r\n", name);
+    }
+  }
 
-        /* Does more checks, so it has it's own function */
-        bool SSEPresent = SSEIsAvailable();
-        if (SSEPresent) /* if SSE(2) && FPU */
-        {
-                LOG(" [cpu] SSE Is available, attempting to enable\r\n");
-                SSEEnable();
-                __asm volatile(" fxsave %0 " ::"m"(fxsave_region));
-                LOG(" [cpu] SSE Is enabled\r\n");
-        }
-        else
-        {
-                LOG(" [cpu!] SSE is not available\r\n");
-                panic(PANIC_REQUIRED_FEATURE);
-        }
+  /* Does more checks, so it has it's own function */
+  bool SSEPresent = SSEIsAvailable();
+  if (SSEPresent) /* if SSE(2) && FPU */
+  {
+    LOG(" [cpu] SSE Is available, attempting to enable\r\n");
+    SSEEnable();
+    __asm volatile(" fxsave %0 " ::"m"(fxsave_region));
+    LOG(" [cpu] SSE Is enabled\r\n");
+  } else {
+    LOG(" [cpu!] SSE is not available\r\n");
+    panic(PANIC_REQUIRED_FEATURE);
+  }
 
-        if (Features[2])
-        {
-                LOG(" [cpu] DE Is available\r\n");
-                FeatureCR4Enable(3);
-        }
+  if (Features[2]) {
+    LOG(" [cpu] DE Is available\r\n");
+    FeatureCR4Enable(3);
+  }
 
-        if (Features[5])
-        {
-                LOG(" [cpu] MSR Is available\r\n");
-        }
-        else
-        {
-                LOG(" [cpu!] MSR is not available\r\n");
-                panic(PANIC_REQUIRED_FEATURE);
-        }
+  if (Features[5]) {
+    LOG(" [cpu] MSR Is available\r\n");
+  } else {
+    LOG(" [cpu!] MSR is not available\r\n");
+    panic(PANIC_REQUIRED_FEATURE);
+  }
 }
 
-bool IsFeaturePresent(size_t Idx)
-{
-        return Features[Idx % 64];
-}
+bool IsFeaturePresent(size_t Idx) { return Features[Idx % 64]; }

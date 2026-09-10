@@ -2,13 +2,13 @@
 #ifndef _PROC_H
 #define _PROC_H
 
-#include <stdint.h>
-#include <stddef.h>
+#include <fs/fs.h>
+#include <mm/paging.h>
 #include <sched/task.h>
 #include <sched/trap.h>
 #include <sched/user.h>
-#include <mm/paging.h>
-#include <fs/fs.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <sys/signal.h>
 
 #define MAX_TASKS (16)
@@ -17,48 +17,44 @@
 
 typedef uint64_t pid_t;
 
-typedef enum
-{
-        TASK_READY,
-        TASK_RUNNING,
-        TASK_BLOCKED,
-        TASK_DEAD,
-        TASK_WAITING,
+typedef enum {
+  TASK_READY,
+  TASK_RUNNING,
+  TASK_BLOCKED,
+  TASK_DEAD,
+  TASK_WAITING,
 } task_state_t;
 
 typedef struct proc_t proc_t;
 
-typedef struct task_t
-{
-        void                  *kernel_stack;
-        proc_t                *parent;
-        task_state_t           state;
-        task_state_registers_t regs;
+typedef struct task_t {
+  void *kernel_stack;
+  proc_t *parent;
+  task_state_t state;
+  task_state_registers_t regs;
 } task_t;
 
-typedef struct proc_t
-{
-        struct proc_t   *next,*prev;
-        pid_t            pid;
-        char           **argv;
-        int              argc;
-        vnode_t         *cwd;
-        task_t           tasks[MAX_TASKS];
-        size_t           taskcount;
-        bool             awaiting_destruction;
+typedef struct proc_t {
+  struct proc_t *next, *prev;
+  pid_t pid;
+  char **argv;
+  int argc;
+  vnode_t *cwd;
+  task_t tasks[MAX_TASKS];
+  size_t taskcount;
+  bool awaiting_destruction;
 
-        struct
-        {
-                file_t       **items; // if null, empty
-                size_t         count;
-                size_t         capacity;
-        } fd;
+  struct {
+    file_t **items; // if null, empty
+    size_t count;
+    size_t capacity;
+  } fd;
 
-        address_space_t *space;
+  address_space_t *space;
 } proc_t;
 
-extern task_t         *current_task;
-extern proc_t         *current_proc, *processes;
+extern task_t *current_task;
+extern proc_t *current_proc, *processes;
 extern task_state_registers_t scratch;
 extern uint64_t ticks_since_boot;
 
@@ -70,9 +66,10 @@ void sched_init(void);
 proc_t *proc_create(void);
 task_t *task_create(proc_t *proc);
 
-void    proc_kill(proc_t *);
-void    proc_destroy(proc_t *);  // clear, remove from ll
-void    proc_clear(proc_t *); // clear all mappings, and registers, .., also suspend
+void proc_kill(proc_t *);
+void proc_destroy(proc_t *); // clear, remove from ll
+void proc_clear(
+    proc_t *); // clear all mappings, and registers, .., also suspend
 
 int proc_open_direct(proc_t *proc, vnode_t *node, int flags, int mode);
 int proc_open(proc_t *proc, char *path, int flags, int mode);

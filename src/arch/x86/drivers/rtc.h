@@ -1,9 +1,9 @@
 #ifndef RTC
 #define RTC
 
-#include <stdint.h>
-#include <stddef.h>
 #include <cpu/io.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #define RTC_ADDRESS_PORT 0x70
 #define RTC_DATA_PORT 0x71
@@ -16,10 +16,9 @@
 #define RTC_YEAR 0x09
 #define BASE_YEAR (2000)
 
-typedef struct
-{
-        uint8_t day, month, year;
-        uint8_t hour, minute, second;
+typedef struct {
+  uint8_t day, month, year;
+  uint8_t hour, minute, second;
 } rtcTime_t;
 
 rtcTime_t rtcGetTime(void);

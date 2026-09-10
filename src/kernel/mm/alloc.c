@@ -1,138 +1,119 @@
 
+#include <dbg.h>
 #include <mm/alloc.h>
 #include <mm/paging.h>
 #include <mm/pmm.h>
-#include <dbg.h>
-#include <string.h>
 #include <panic.h>
+#include <string.h>
 
-typedef struct
-{
-        size_t size;
-        size_t pages;
+typedef struct {
+  size_t size;
+  size_t pages;
 } block_header_t;
 
 #define KHEAP_START 0xD0000000
-#define KHEAP_END   0xE0000000
+#define KHEAP_END 0xE0000000
 
 static uintptr_t heap_next = KHEAP_START;
 
-uintptr_t vmalloc(size_t size)
-{
-        size = (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-        uintptr_t addr = heap_next;
-        heap_next += size;
-        if (heap_next >= KHEAP_END)
-                return 0;
-        return addr;
+uintptr_t vmalloc(size_t size) {
+  size = (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+  uintptr_t addr = heap_next;
+  heap_next += size;
+  if (heap_next >= KHEAP_END)
+    return 0;
+  return addr;
 }
 
-void vfree(uintptr_t v, size_t size)
-{
-        (void)v;
-        (void)size;
-        return;
+void vfree(uintptr_t v, size_t size) {
+  (void)v;
+  (void)size;
+  return;
 }
 
-void *__krealloc(void *base, size_t siz, const char *FILE, long LINE)
-{
-        if (!base)
-                return __kmalloc(siz, FILE, LINE);
+void *__krealloc(void *base, size_t siz, const char *FILE, long LINE) {
+  if (!base)
+    return __kmalloc(siz, FILE, LINE);
 
-        if (siz == 0)
-        {
-                __kfree(base, FILE, LINE);
-                return NULL;
-        }
+  if (siz == 0) {
+    __kfree(base, FILE, LINE);
+    return NULL;
+  }
 
-        block_header_t *old_header =
-                (block_header_t *)(
-                        (uintptr_t)base - sizeof(block_header_t)
-                );
+  block_header_t *old_header =
+      (block_header_t *)((uintptr_t)base - sizeof(block_header_t));
 
-        size_t old_size = old_header->size;
+  size_t old_size = old_header->size;
 
-        void *new = __kmalloc(siz, FILE, LINE);
+  void *new = __kmalloc(siz, FILE, LINE);
 
-        if (!new)
-                return NULL;
+  if (!new)
+    return NULL;
 
-        size_t copy = old_size < siz ? old_size : siz;
+  size_t copy = old_size < siz ? old_size : siz;
 
-        memcpy(new, base, copy);
+  memcpy(new, base, copy);
 
-        __kfree(base, FILE, LINE);
+  __kfree(base, FILE, LINE);
 
-        return new;
+  return new;
 }
 
-void *__kmalloc(size_t size, const char *FILE, long LINE)
-{
-        (void)LINE;
-        (void)FILE;
-        if (size == 0)
-                return NULL;
-        size_t total = size + sizeof(block_header_t);
-        size_t pages = (total + PAGE_SIZE - 1) / PAGE_SIZE;
-        uintptr_t virt = vmalloc(pages * PAGE_SIZE);
-        if (!virt)
-                panic(PANIC_RAN_OUT_OF_MEMORY);
-        for (size_t i = 0; i < pages; i++)
-        {
-                uintptr_t phys = (uintptr_t)virt_to_phys(paging_get_address_space(), pmm_alloc());
-                if (!phys)
-                {
-                        for (size_t j = 0; j < i; j++)
-                        {
-                                uintptr_t old_phys =
-                                        virt_to_phys(paging_get_address_space(), (void *)(virt + j * PAGE_SIZE));
-                                paging_unmap(paging_get_address_space(), virt + j * PAGE_SIZE);
-                                pmm_free((void *)old_phys);
-                        }
+void *__kmalloc(size_t size, const char *FILE, long LINE) {
+  (void)LINE;
+  (void)FILE;
+  if (size == 0)
+    return NULL;
+  size_t total = size + sizeof(block_header_t);
+  size_t pages = (total + PAGE_SIZE - 1) / PAGE_SIZE;
+  uintptr_t virt = vmalloc(pages * PAGE_SIZE);
+  if (!virt)
+    panic(PANIC_RAN_OUT_OF_MEMORY);
+  for (size_t i = 0; i < pages; i++) {
+    uintptr_t phys =
+        (uintptr_t)virt_to_phys(paging_get_address_space(), pmm_alloc());
+    if (!phys) {
+      for (size_t j = 0; j < i; j++) {
+        uintptr_t old_phys = virt_to_phys(paging_get_address_space(),
+                                          (void *)(virt + j * PAGE_SIZE));
+        paging_unmap(paging_get_address_space(), virt + j * PAGE_SIZE);
+        pmm_free((void *)old_phys);
+      }
 
-                        panic(PANIC_RAN_OUT_OF_MEMORY);
-                }
+      panic(PANIC_RAN_OUT_OF_MEMORY);
+    }
 
-                paging_map(
-                        paging_get_address_space(),
-                        virt + i * PAGE_SIZE,
-                        phys,
-                        PAGE_PRESENT | PAGE_WRITE
-                );
-        }
+    paging_map(paging_get_address_space(), virt + i * PAGE_SIZE, phys,
+               PAGE_PRESENT | PAGE_WRITE);
+  }
 
-        block_header_t *header = (void *)virt;
-        header->size = size;
-        header->pages = pages;
-        memset(
-                (void *)(virt + sizeof(block_header_t)),
-                0,
-                size
-        );
+  block_header_t *header = (void *)virt;
+  header->size = size;
+  header->pages = pages;
+  memset((void *)(virt + sizeof(block_header_t)), 0, size);
 
-        LOG(" [kmalloc] allocating %x[%d] %s:%d\r\n", virt + sizeof(block_header_t), size, FILE, LINE);
-        return (void *)(virt + sizeof(block_header_t));
+  LOG(" [kmalloc] allocating %x[%d] %s:%d\r\n", virt + sizeof(block_header_t),
+      size, FILE, LINE);
+  return (void *)(virt + sizeof(block_header_t));
 }
 
-void __kfree(void *ptr, const char *FILE, long LINE)
-{
-        (void)LINE;
-        (void)FILE;
-        if (!ptr)
-                return;
-        LOG(" [kfree] freeing %x %s:%d\r\n", ptr, FILE, LINE);
-        block_header_t *header =
-        (block_header_t *)((uintptr_t)ptr - sizeof(block_header_t));
-        uintptr_t virt = (uintptr_t)header;
-        size_t pages = header->pages;
-        for (size_t i = 0; i < pages; i++)
-        {
-                uintptr_t page = virt + i * PAGE_SIZE;
-                uintptr_t phys = virt_to_phys(paging_get_address_space(), (void *)page);
+void __kfree(void *ptr, const char *FILE, long LINE) {
+  (void)LINE;
+  (void)FILE;
+  if (!ptr)
+    return;
+  LOG(" [kfree] freeing %x %s:%d\r\n", ptr, FILE, LINE);
+  block_header_t *header =
+      (block_header_t *)((uintptr_t)ptr - sizeof(block_header_t));
+  uintptr_t virt = (uintptr_t)header;
+  size_t pages = header->pages;
+  for (size_t i = 0; i < pages; i++) {
+    uintptr_t page = virt + i * PAGE_SIZE;
+    uintptr_t phys = virt_to_phys(paging_get_address_space(), (void *)page);
 
-                paging_unmap(paging_get_address_space(), page);
-                pmm_free((void *)phys);
-        }
+    paging_unmap(paging_get_address_space(), page);
+    pmm_free((void *)phys);
+  }
 
-        vfree(virt, pages * PAGE_SIZE);
+  vfree(virt, pages * PAGE_SIZE);
 }
